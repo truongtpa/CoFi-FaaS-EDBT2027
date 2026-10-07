@@ -1,0 +1,243 @@
+name: q20
+description: TPC-H Query 20 - Potential Part Promotion
+
+variables:
+  enable_bf: $enable_bf
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: '$s3_metadata/{{ bucket }}.json'
+  nfs_folder: '/mnt/filters'
+  parm1: $parm1
+  parm2: $parm2
+  parm3: $parm3
+
+steps:
+  - name: step1-nation
+    func: scan
+    input: 's3://{{ bucket }}/nation.parquet'
+    from_previous_task: None
+    params:
+      select: SELECT n_nationkey
+      sql_clauses: WHERE n_name = '{{ parm3 }}' AND n_nationkey IS NOT NULL
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+
+  - name: step1-nation--combine
+    func: aggregate
+    from_previous_task: step1-nation
+    params:
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+      {% if enable_bf %}
+      bf_column: n_nationkey
+      bf_path: '{{ nfs_folder }}/$task_name/$random.bin'
+      est_elements: 1
+      {% endif %}
+
+  {% if enable_bf %}
+  - name: step1-nation--mergebf
+    func: merge_bf
+    from_previous_task: step1-nation--combine
+    params:
+      file_output: '{{ nfs_folder }}/$task_name/$random.bin'
+      error_rate: 0.001
+  {% endif %}
+  - name: step2-supplier
+    func: scan
+    input: 's3://{{ bucket }}/supplier.parquet'
+    {% if enable_bf %}
+    from_previous_task: step1-nation--mergebf
+    {% endif %}
+    params:
+      select: SELECT s_suppkey, s_name, s_address, s_nationkey
+      sql_clauses: WHERE s_suppkey IS NOT NULL AND s_nationkey IS NOT NULL
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+      {% if enable_bf %}
+      bf_column: s_nationkey
+      filter_by_bf: True
+      {% endif %}
+
+  - name: step2-supplier--combine
+    func: aggregate
+    from_previous_task: step2-supplier
+    params:
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+      {% if enable_bf %}
+      bf_column: s_suppkey
+      bf_path: '{{ nfs_folder }}/$task_name/$random.bin'
+      est_elements: 100_000
+      {% endif %}
+
+  {% if enable_bf %}
+  - name: step2-supplier--mergebf
+    func: merge_bf
+    from_previous_task: step2-supplier--combine
+    params:
+      file_output: '{{ nfs_folder }}/$task_name/$random.bin'
+      error_rate: 0.001
+  {% endif %}
+  - name: step3-join-nation-supplier
+    func: broadcast_join
+    from_previous_task:
+      - step1-nation--combine
+      - step2-supplier--combine
+    params:
+      probe_select: SELECT s_suppkey, s_name, s_address
+      join_condition: n_nationkey = s_nationkey
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+
+  - name: step3-join-nation-supplier--combine
+    func: aggregate
+    from_previous_task: step3-join-nation-supplier
+    params:
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+  - name: step4-part
+    func: scan
+    input: 's3://{{ bucket }}/part.parquet'
+    from_previous_task: None
+    params:
+      select: SELECT p_partkey
+      sql_clauses: WHERE p_name LIKE '{{ parm1 }}%' AND p_partkey IS NOT NULL
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+
+  - name: step4-part--combine
+    func: aggregate
+    from_previous_task: step4-part
+    params:
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+      {% if enable_bf %}
+      bf_column: p_partkey
+      bf_path: '{{ nfs_folder }}/$task_name/$random.bin'
+      est_elements: 200_000
+      {% endif %}
+
+  {% if enable_bf %}
+  - name: step4-part--mergebf
+    func: merge_bf
+    from_previous_task: step4-part--combine
+    params:
+      file_output: '{{ nfs_folder }}/$task_name/$random.bin'
+      error_rate: 0.001
+  {% endif %}
+  - name: step5-lineitem
+    func: scan
+    input: 's3://{{ bucket }}/lineitem.parquet'
+    {% if enable_bf %}
+    from_previous_task: step4-part--mergebf
+    {% endif %}
+    params:
+      select: SELECT l_partkey, l_suppkey, l_quantity
+      sql_clauses: >
+        WHERE l_shipdate >= DATE '{{ parm2 }}'
+          AND l_shipdate < DATE '{{ parm2 }}' + INTERVAL 1 YEAR
+          AND l_partkey IS NOT NULL AND l_suppkey IS NOT NULL
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+      {% if enable_bf %}
+      bf_column: l_partkey
+      filter_by_bf: True
+      {% endif %}
+
+  - name: step5-lineitem--combine
+    func: aggregate
+    from_previous_task: step5-lineitem
+    params:
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+  - name: step6-agg-qty
+    func: aggregate
+    from_previous_task: step5-lineitem--combine
+    params:
+      select: >
+        SELECT l_partkey, l_suppkey,
+               SUM(l_quantity) AS sum_qty
+      sql_clauses: GROUP BY l_partkey, l_suppkey
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+
+  {% for i in range(1, 4) %}
+  - name: step6-agg-qty--reduce-{{ i }}
+    func: aggregate
+    from_previous_task: "{{ 'step6-agg-qty' if i == 1 else 'step6-agg-qty--reduce-' ~ (i-1) }}"
+    max_size_mb: {{ 50 * i }}
+    params:
+      select: SELECT l_partkey, l_suppkey, SUM(sum_qty) AS sum_qty
+      sql_clauses: GROUP BY l_partkey, l_suppkey
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+  {% endfor %}
+  - name: step7-partsupp
+    func: scan
+    input: 's3://{{ bucket }}/partsupp.parquet'
+    {% if enable_bf %}
+    from_previous_task: step4-part--mergebf
+    {% endif %}
+    params:
+      select: SELECT ps_partkey, ps_suppkey, ps_availqty
+      sql_clauses: WHERE ps_partkey IS NOT NULL AND ps_suppkey IS NOT NULL
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+      {% if enable_bf %}
+      bf_column: ps_partkey
+      filter_by_bf: True
+      {% endif %}
+
+  - name: step7-partsupp--combine
+    func: aggregate
+    from_previous_task: step7-partsupp
+    params:
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+  - name: step8-join-excess
+    func: broadcast_join
+    from_previous_task:
+      - step6-agg-qty--reduce-3
+      - step7-partsupp--combine
+    params:
+      probe_select: SELECT ps_suppkey, ps_partkey
+      join_condition: >
+        probe_table.ps_partkey = build_table.l_partkey
+        AND probe_table.ps_suppkey = build_table.l_suppkey
+        AND probe_table.ps_availqty > 0.5 * build_table.sum_qty
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+
+  - name: step8-join-excess--combine
+    func: aggregate
+    from_previous_task: step8-join-excess
+    params:
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+      {% if enable_bf %}
+      bf_column: ps_suppkey
+      bf_path: '{{ nfs_folder }}/$task_name/$random.bin'
+      est_elements: 10_000
+      {% endif %}
+
+  {% if enable_bf %}
+  - name: step8-join-excess--mergebf
+    func: merge_bf
+    from_previous_task: step8-join-excess--combine
+    params:
+      file_output: '{{ nfs_folder }}/$task_name/$random.bin'
+      error_rate: 0.001
+  {% endif %}
+  - name: step9-join-supplier-excess
+    func: broadcast_join
+    from_previous_task:
+      - step8-join-excess--combine
+      - step3-join-nation-supplier--combine
+    params:
+      probe_select: SELECT s_name, s_address
+      join_condition: ps_suppkey = s_suppkey
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+
+  - name: step9-join-supplier-excess--combine
+    func: aggregate
+    from_previous_task: step9-join-supplier-excess
+    params:
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+  - name: step10-agg
+    func: aggregate
+    from_previous_task: step9-join-supplier-excess--combine
+    params:
+      select: SELECT DISTINCT s_name, s_address
+      sql_clauses: ORDER BY s_name
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+  - name: step11-summary-clean
+    func: summary_clean
+    params:
+      output_s3: '{{ base_path }}'
+      nfs_folder: '{{ nfs_folder }}'
+      is_delete: True

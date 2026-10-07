@@ -1,0 +1,1636 @@
+{
+  "q1": {
+    "seed1": {
+      "delta": 92
+    },
+    "seed10": {
+      "delta": 104
+    },
+    "seed11": {
+      "delta": 83
+    },
+    "seed12": {
+      "delta": 62
+    },
+    "seed13": {
+      "delta": 102
+    },
+    "seed14": {
+      "delta": 81
+    },
+    "seed15": {
+      "delta": 68
+    },
+    "seed2": {
+      "delta": 72
+    },
+    "seed3": {
+      "delta": 112
+    },
+    "seed4": {
+      "delta": 99
+    },
+    "seed5": {
+      "delta": 78
+    },
+    "seed6": {
+      "delta": 118
+    },
+    "seed7": {
+      "delta": 97
+    },
+    "seed8": {
+      "delta": 76
+    },
+    "seed9": {
+      "delta": 116
+    }
+  },
+  "q2": {
+    "seed1": {
+      "size": 26,
+      "type": "STEEL",
+      "region": "ASIA"
+    },
+    "seed10": {
+      "size": 2,
+      "type": "NICKEL",
+      "region": "ASIA"
+    },
+    "seed11": {
+      "size": 41,
+      "type": "TIN",
+      "region": "AFRICA"
+    },
+    "seed12": {
+      "size": 30,
+      "type": "COPPER",
+      "region": "EUROPE"
+    },
+    "seed13": {
+      "size": 19,
+      "type": "STEEL",
+      "region": "ASIA"
+    },
+    "seed14": {
+      "size": 8,
+      "type": "BRASS",
+      "region": "AFRICA"
+    },
+    "seed15": {
+      "size": 34,
+      "type": "TIN",
+      "region": "AMERICA"
+    },
+    "seed2": {
+      "size": 15,
+      "type": "BRASS",
+      "region": "AFRICA"
+    },
+    "seed3": {
+      "size": 4,
+      "type": "NICKEL",
+      "region": "EUROPE"
+    },
+    "seed4": {
+      "size": 31,
+      "type": "STEEL",
+      "region": "MIDDLE EAST"
+    },
+    "seed5": {
+      "size": 20,
+      "type": "BRASS",
+      "region": "EUROPE"
+    },
+    "seed6": {
+      "size": 9,
+      "type": "NICKEL",
+      "region": "AMERICA"
+    },
+    "seed7": {
+      "size": 47,
+      "type": "TIN",
+      "region": "MIDDLE EAST"
+    },
+    "seed8": {
+      "size": 36,
+      "type": "COPPER",
+      "region": "ASIA"
+    },
+    "seed9": {
+      "size": 25,
+      "type": "STEEL",
+      "region": "AMERICA"
+    }
+  },
+  "q3": {
+    "seed1": {
+      "segment": "FURNITURE",
+      "date": "1995-03-13"
+    },
+    "seed10": {
+      "segment": "AUTOMOBILE",
+      "date": "1995-03-15"
+    },
+    "seed11": {
+      "segment": "FURNITURE",
+      "date": "1995-03-04"
+    },
+    "seed12": {
+      "segment": "HOUSEHOLD",
+      "date": "1995-03-25"
+    },
+    "seed13": {
+      "segment": "MACHINERY",
+      "date": "1995-03-14"
+    },
+    "seed14": {
+      "segment": "BUILDING",
+      "date": "1995-03-04"
+    },
+    "seed15": {
+      "segment": "AUTOMOBILE",
+      "date": "1995-03-10"
+    },
+    "seed2": {
+      "segment": "MACHINERY",
+      "date": "1995-03-03"
+    },
+    "seed3": {
+      "segment": "AUTOMOBILE",
+      "date": "1995-03-24"
+    },
+    "seed4": {
+      "segment": "MACHINERY",
+      "date": "1995-03-30"
+    },
+    "seed5": {
+      "segment": "AUTOMOBILE",
+      "date": "1995-03-19"
+    },
+    "seed6": {
+      "segment": "FURNITURE",
+      "date": "1995-03-09"
+    },
+    "seed7": {
+      "segment": "HOUSEHOLD",
+      "date": "1995-03-29"
+    },
+    "seed8": {
+      "segment": "AUTOMOBILE",
+      "date": "1995-03-19"
+    },
+    "seed9": {
+      "segment": "BUILDING",
+      "date": "1995-03-09"
+    }
+  },
+  "q4": {
+    "seed1": {
+      "date": "1995-02-01"
+    },
+    "seed10": {
+      "date": "1995-04-01"
+    },
+    "seed11": {
+      "date": "1993-08-01"
+    },
+    "seed12": {
+      "date": "1996-11-01"
+    },
+    "seed13": {
+      "date": "1995-03-01"
+    },
+    "seed14": {
+      "date": "1993-08-01"
+    },
+    "seed15": {
+      "date": "1994-07-01"
+    },
+    "seed2": {
+      "date": "1993-06-01"
+    },
+    "seed3": {
+      "date": "1996-09-01"
+    },
+    "seed4": {
+      "date": "1997-08-01"
+    },
+    "seed5": {
+      "date": "1995-12-01"
+    },
+    "seed6": {
+      "date": "1994-05-01"
+    },
+    "seed7": {
+      "date": "1997-08-01"
+    },
+    "seed8": {
+      "date": "1995-12-01"
+    },
+    "seed9": {
+      "date": "1994-05-01"
+    }
+  },
+  "q5": {
+    "seed1": {
+      "region": "AMERICA",
+      "date": "1995-01-01"
+    },
+    "seed10": {
+      "region": "ASIA",
+      "date": "1996-01-01"
+    },
+    "seed11": {
+      "region": "EUROPE",
+      "date": "1997-01-01"
+    },
+    "seed12": {
+      "region": "EUROPE",
+      "date": "1993-01-01"
+    },
+    "seed13": {
+      "region": "MIDDLE EAST",
+      "date": "1994-01-01"
+    },
+    "seed14": {
+      "region": "MIDDLE EAST",
+      "date": "1995-01-01"
+    },
+    "seed15": {
+      "region": "AMERICA",
+      "date": "1997-01-01"
+    },
+    "seed2": {
+      "region": "AMERICA",
+      "date": "1996-01-01"
+    },
+    "seed3": {
+      "region": "ASIA",
+      "date": "1997-01-01"
+    },
+    "seed4": {
+      "region": "EUROPE",
+      "date": "1993-01-01"
+    },
+    "seed5": {
+      "region": "MIDDLE EAST",
+      "date": "1995-01-01"
+    },
+    "seed6": {
+      "region": "MIDDLE EAST",
+      "date": "1996-01-01"
+    },
+    "seed7": {
+      "region": "AFRICA",
+      "date": "1997-01-01"
+    },
+    "seed8": {
+      "region": "AFRICA",
+      "date": "1993-01-01"
+    },
+    "seed9": {
+      "region": "AMERICA",
+      "date": "1994-01-01"
+    }
+  },
+  "q6": {
+    "seed1": {
+      "date": "1995-01-01",
+      "discount": "0.08",
+      "quantity": "24"
+    },
+    "seed10": {
+      "date": "1996-01-01",
+      "discount": "0.08",
+      "quantity": "24"
+    },
+    "seed11": {
+      "date": "1997-01-01",
+      "discount": "0.03",
+      "quantity": "25"
+    },
+    "seed12": {
+      "date": "1993-01-01",
+      "discount": "0.06",
+      "quantity": "24"
+    },
+    "seed13": {
+      "date": "1994-01-01",
+      "discount": "0.09",
+      "quantity": "24"
+    },
+    "seed14": {
+      "date": "1996-01-01",
+      "discount": "0.02",
+      "quantity": "25"
+    },
+    "seed15": {
+      "date": "1997-01-01",
+      "discount": "0.05",
+      "quantity": "25"
+    },
+    "seed2": {
+      "date": "1996-01-01",
+      "discount": "0.04",
+      "quantity": "25"
+    },
+    "seed3": {
+      "date": "1997-01-01",
+      "discount": "0.07",
+      "quantity": "24"
+    },
+    "seed4": {
+      "date": "1993-01-01",
+      "discount": "0.07",
+      "quantity": "24"
+    },
+    "seed5": {
+      "date": "1995-01-01",
+      "discount": "0.03",
+      "quantity": "25"
+    },
+    "seed6": {
+      "date": "1996-01-01",
+      "discount": "0.06",
+      "quantity": "24"
+    },
+    "seed7": {
+      "date": "1997-01-01",
+      "discount": "0.09",
+      "quantity": "24"
+    },
+    "seed8": {
+      "date": "1993-01-01",
+      "discount": "0.04",
+      "quantity": "25"
+    },
+    "seed9": {
+      "date": "1994-01-01",
+      "discount": "0.07",
+      "quantity": "24"
+    }
+  },
+  "q7": {
+    "seed1": {
+      "nation1": "VIETNAM",
+      "nation2": "INDIA"
+    },
+    "seed10": {
+      "nation1": "ROMANIA",
+      "nation2": "FRANCE"
+    },
+    "seed11": {
+      "nation1": "EGYPT",
+      "nation2": "MOZAMBIQUE"
+    },
+    "seed12": {
+      "nation1": "KENYA",
+      "nation2": "ARGENTINA"
+    },
+    "seed13": {
+      "nation1": "UNITED STATES",
+      "nation2": "IRAQ"
+    },
+    "seed14": {
+      "nation1": "ALGERIA",
+      "nation2": "JORDAN"
+    },
+    "seed15": {
+      "nation1": "IRAN",
+      "nation2": "UNITED KINGDOM"
+    },
+    "seed2": {
+      "nation1": "FRANCE",
+      "nation2": "CHINA"
+    },
+    "seed3": {
+      "nation1": "MOZAMBIQUE",
+      "nation2": "CANADA"
+    },
+    "seed4": {
+      "nation1": "CHINA",
+      "nation2": "ETHIOPIA"
+    },
+    "seed5": {
+      "nation1": "CANADA",
+      "nation2": "MOROCCO"
+    },
+    "seed6": {
+      "nation1": "JORDAN",
+      "nation2": "ALGERIA"
+    },
+    "seed7": {
+      "nation1": "RUSSIA",
+      "nation2": "INDONESIA"
+    },
+    "seed8": {
+      "nation1": "GERMANY",
+      "nation2": "ROMANIA"
+    },
+    "seed9": {
+      "nation1": "PERU",
+      "nation2": "EGYPT"
+    }
+  },
+  "q8": {
+    "seed1": {
+      "nation": "INDIA",
+      "region": "ASIA",
+      "type": "SMALL BRUSHED COPPER"
+    },
+    "seed10": {
+      "nation": "FRANCE",
+      "region": "EUROPE",
+      "type": "SMALL PLATED STEEL"
+    },
+    "seed11": {
+      "nation": "MOZAMBIQUE",
+      "region": "AFRICA",
+      "type": "PROMO PLATED COPPER"
+    },
+    "seed12": {
+      "nation": "ARGENTINA",
+      "region": "AMERICA",
+      "type": "LARGE POLISHED TIN"
+    },
+    "seed13": {
+      "nation": "IRAQ",
+      "region": "MIDDLE EAST",
+      "type": "SMALL POLISHED NICKEL"
+    },
+    "seed14": {
+      "nation": "JORDAN",
+      "region": "MIDDLE EAST",
+      "type": "PROMO BURNISHED BRASS"
+    },
+    "seed15": {
+      "nation": "UNITED KINGDOM",
+      "region": "EUROPE",
+      "type": "LARGE BURNISHED STEEL"
+    },
+    "seed2": {
+      "nation": "CHINA",
+      "region": "ASIA",
+      "type": "STANDARD ANODIZED TIN"
+    },
+    "seed3": {
+      "nation": "CANADA",
+      "region": "AMERICA",
+      "type": "ECONOMY ANODIZED NICKEL"
+    },
+    "seed4": {
+      "nation": "ETHIOPIA",
+      "region": "AFRICA",
+      "type": "SMALL POLISHED BRASS"
+    },
+    "seed5": {
+      "nation": "MOROCCO",
+      "region": "AFRICA",
+      "type": "PROMO POLISHED STEEL"
+    },
+    "seed6": {
+      "nation": "ALGERIA",
+      "region": "AFRICA",
+      "type": "LARGE POLISHED COPPER"
+    },
+    "seed7": {
+      "nation": "INDONESIA",
+      "region": "ASIA",
+      "type": "SMALL BRUSHED TIN"
+    },
+    "seed8": {
+      "nation": "ROMANIA",
+      "region": "EUROPE",
+      "type": "PROMO BRUSHED NICKEL"
+    },
+    "seed9": {
+      "nation": "EGYPT",
+      "region": "MIDDLE EAST",
+      "type": "LARGE BRUSHED BRASS"
+    }
+  },
+  "q9": {
+    "seed1": {
+      "color": "gainsboro"
+    },
+    "seed10": {
+      "color": "dim"
+    },
+    "seed11": {
+      "color": "thistle"
+    },
+    "seed12": {
+      "color": "navajo"
+    },
+    "seed13": {
+      "color": "drab"
+    },
+    "seed14": {
+      "color": "snow"
+    },
+    "seed15": {
+      "color": "midnight"
+    },
+    "seed2": {
+      "color": "almond"
+    },
+    "seed3": {
+      "color": "peach"
+    },
+    "seed4": {
+      "color": "drab"
+    },
+    "seed5": {
+      "color": "turquoise"
+    },
+    "seed6": {
+      "color": "olive"
+    },
+    "seed7": {
+      "color": "floral"
+    },
+    "seed8": {
+      "color": "wheat"
+    },
+    "seed9": {
+      "color": "orchid"
+    }
+  },
+  "q10": {
+    "seed1": {
+      "date": "1994-02-01"
+    },
+    "seed10": {
+      "date": "1994-03-01"
+    },
+    "seed11": {
+      "date": "1994-01-01"
+    },
+    "seed12": {
+      "date": "1993-11-01"
+    },
+    "seed13": {
+      "date": "1993-09-01"
+    },
+    "seed14": {
+      "date": "1994-04-01"
+    },
+    "seed15": {
+      "date": "1994-02-01"
+    },
+    "seed2": {
+      "date": "1993-12-01"
+    },
+    "seed3": {
+      "date": "1993-10-01"
+    },
+    "seed4": {
+      "date": "1994-06-01"
+    },
+    "seed5": {
+      "date": "1994-04-01"
+    },
+    "seed6": {
+      "date": "1994-02-01"
+    },
+    "seed7": {
+      "date": "1993-12-01"
+    },
+    "seed8": {
+      "date": "1993-10-01"
+    },
+    "seed9": {
+      "date": "1994-05-01"
+    }
+  },
+  "q11": {
+    "seed1": {
+      "nation": "ROMANIA",
+      "fraction": "0.0000010000"
+    },
+    "seed10": {
+      "nation": "EGYPT",
+      "fraction": "0.0000010000"
+    },
+    "seed11": {
+      "nation": "ROMANIA",
+      "fraction": "0.0000010000"
+    },
+    "seed12": {
+      "nation": "INDONESIA",
+      "fraction": "0.0000010000"
+    },
+    "seed13": {
+      "nation": "UNITED STATES",
+      "fraction": "0.0000010000"
+    },
+    "seed14": {
+      "nation": "BRAZIL",
+      "fraction": "0.0000010000"
+    },
+    "seed15": {
+      "nation": "PERU",
+      "fraction": "0.0000010000"
+    },
+    "seed2": {
+      "nation": "INDONESIA",
+      "fraction": "0.0000010000"
+    },
+    "seed3": {
+      "nation": "UNITED STATES",
+      "fraction": "0.0000010000"
+    },
+    "seed4": {
+      "nation": "BRAZIL",
+      "fraction": "0.0000010000"
+    },
+    "seed5": {
+      "nation": "PERU",
+      "fraction": "0.0000010000"
+    },
+    "seed6": {
+      "nation": "GERMANY",
+      "fraction": "0.0000010000"
+    },
+    "seed7": {
+      "nation": "RUSSIA",
+      "fraction": "0.0000010000"
+    },
+    "seed8": {
+      "nation": "IRAQ",
+      "fraction": "0.0000010000"
+    },
+    "seed9": {
+      "nation": "KENYA",
+      "fraction": "0.0000010000"
+    }
+  },
+  "q12": {
+    "seed1": {
+      "shipmode1": "RAIL",
+      "shipmode2": "AIR",
+      "date": "1995-01-01"
+    },
+    "seed10": {
+      "shipmode1": "RAIL",
+      "shipmode2": "FOB",
+      "date": "1997-01-01"
+    },
+    "seed11": {
+      "shipmode1": "MAIL",
+      "shipmode2": "SHIP",
+      "date": "1994-01-01"
+    },
+    "seed12": {
+      "shipmode1": "FOB",
+      "shipmode2": "REG AIR",
+      "date": "1995-01-01"
+    },
+    "seed13": {
+      "shipmode1": "SHIP",
+      "shipmode2": "RAIL",
+      "date": "1996-01-01"
+    },
+    "seed14": {
+      "shipmode1": "SHIP",
+      "shipmode2": "TRUCK",
+      "date": "1993-01-01"
+    },
+    "seed15": {
+      "shipmode1": "REG AIR",
+      "shipmode2": "MAIL",
+      "date": "1994-01-01"
+    },
+    "seed2": {
+      "shipmode1": "TRUCK",
+      "shipmode2": "RAIL",
+      "date": "1996-01-01"
+    },
+    "seed3": {
+      "shipmode1": "MAIL",
+      "shipmode2": "TRUCK",
+      "date": "1997-01-01"
+    },
+    "seed4": {
+      "shipmode1": "MAIL",
+      "shipmode2": "AIR",
+      "date": "1993-01-01"
+    },
+    "seed5": {
+      "shipmode1": "FOB",
+      "shipmode2": "SHIP",
+      "date": "1995-01-01"
+    },
+    "seed6": {
+      "shipmode1": "SHIP",
+      "shipmode2": "REG AIR",
+      "date": "1997-01-01"
+    },
+    "seed7": {
+      "shipmode1": "REG AIR",
+      "shipmode2": "AIR",
+      "date": "1993-01-01"
+    },
+    "seed8": {
+      "shipmode1": "RAIL",
+      "shipmode2": "MAIL",
+      "date": "1996-01-01"
+    },
+    "seed9": {
+      "shipmode1": "AIR",
+      "shipmode2": "MAIL",
+      "date": "1996-01-01"
+    }
+  },
+  "q13": {
+    "seed1": {
+      "word1": "special",
+      "word2": "requests"
+    },
+    "seed10": {
+      "word1": "express",
+      "word2": "deposits"
+    },
+    "seed11": {
+      "word1": "express",
+      "word2": "packages"
+    },
+    "seed12": {
+      "word1": "special",
+      "word2": "requests"
+    },
+    "seed13": {
+      "word1": "pending",
+      "word2": "accounts"
+    },
+    "seed14": {
+      "word1": "pending",
+      "word2": "packages"
+    },
+    "seed15": {
+      "word1": "unusual",
+      "word2": "requests"
+    },
+    "seed2": {
+      "word1": "pending",
+      "word2": "accounts"
+    },
+    "seed3": {
+      "word1": "pending",
+      "word2": "deposits"
+    },
+    "seed4": {
+      "word1": "unusual",
+      "word2": "requests"
+    },
+    "seed5": {
+      "word1": "express",
+      "word2": "accounts"
+    },
+    "seed6": {
+      "word1": "special",
+      "word2": "deposits"
+    },
+    "seed7": {
+      "word1": "special",
+      "word2": "packages"
+    },
+    "seed8": {
+      "word1": "pending",
+      "word2": "requests"
+    },
+    "seed9": {
+      "word1": "unusual",
+      "word2": "accounts"
+    }
+  },
+  "q14": {
+    "seed1": {
+      "date": "1995-02-01"
+    },
+    "seed10": {
+      "date": "1997-09-01"
+    },
+    "seed11": {
+      "date": "1994-01-01"
+    },
+    "seed12": {
+      "date": "1995-05-01"
+    },
+    "seed13": {
+      "date": "1996-09-01"
+    },
+    "seed14": {
+      "date": "1993-04-01"
+    },
+    "seed15": {
+      "date": "1994-08-01"
+    },
+    "seed2": {
+      "date": "1996-06-01"
+    },
+    "seed3": {
+      "date": "1997-10-01"
+    },
+    "seed4": {
+      "date": "1994-05-01"
+    },
+    "seed5": {
+      "date": "1995-09-01"
+    },
+    "seed6": {
+      "date": "1997-01-01"
+    },
+    "seed7": {
+      "date": "1993-05-01"
+    },
+    "seed8": {
+      "date": "1994-09-01"
+    },
+    "seed9": {
+      "date": "1996-05-01"
+    }
+  },
+  "q15": {
+    "seed1": {
+      "date": "1996-01-01"
+    },
+    "seed10": {
+      "date": "1995-07-01"
+    },
+    "seed11": {
+      "date": "1993-11-01"
+    },
+    "seed12": {
+      "date": "1996-12-01"
+    },
+    "seed13": {
+      "date": "1995-04-01"
+    },
+    "seed14": {
+      "date": "1996-02-01"
+    },
+    "seed15": {
+      "date": "1994-06-01"
+    },
+    "seed2": {
+      "date": "1994-05-01"
+    },
+    "seed3": {
+      "date": "1997-06-01"
+    },
+    "seed4": {
+      "date": "1993-07-01"
+    },
+    "seed5": {
+      "date": "1996-08-01"
+    },
+    "seed6": {
+      "date": "1994-12-01"
+    },
+    "seed7": {
+      "date": "1993-04-01"
+    },
+    "seed8": {
+      "date": "1996-05-01"
+    },
+    "seed9": {
+      "date": "1997-03-01"
+    }
+  },
+  "q16": {
+    "seed1": {
+      "brand": "Brand#32",
+      "type": "LARGE ANODIZED",
+      "sizes": [
+        4,
+        23,
+        38,
+        3,
+        21,
+        16,
+        25,
+        18
+      ]
+    },
+    "seed10": {
+      "brand": "Brand#14",
+      "type": "LARGE BURNISHED",
+      "sizes": [
+        11,
+        4,
+        3,
+        23,
+        8,
+        6,
+        15,
+        32
+      ]
+    },
+    "seed11": {
+      "brand": "Brand#24",
+      "type": "MEDIUM POLISHED",
+      "sizes": [
+        28,
+        8,
+        24,
+        21,
+        38,
+        16,
+        42,
+        9
+      ]
+    },
+    "seed12": {
+      "brand": "Brand#45",
+      "type": "MEDIUM BURNISHED",
+      "sizes": [
+        45,
+        13,
+        1,
+        18,
+        22,
+        27,
+        26,
+        29
+      ]
+    },
+    "seed13": {
+      "brand": "Brand#15",
+      "type": "SMALL POLISHED",
+      "sizes": [
+        11,
+        17,
+        18,
+        16,
+        6,
+        37,
+        10,
+        49
+      ]
+    },
+    "seed14": {
+      "brand": "Brand#15",
+      "type": "LARGE PLATED",
+      "sizes": [
+        31,
+        42,
+        24,
+        41,
+        33,
+        40,
+        17,
+        29
+      ]
+    },
+    "seed15": {
+      "brand": "Brand#35",
+      "type": "LARGE ANODIZED",
+      "sizes": [
+        48,
+        46,
+        45,
+        38,
+        17,
+        6,
+        3,
+        49
+      ]
+    },
+    "seed2": {
+      "brand": "Brand#53",
+      "type": "MEDIUM POLISHED",
+      "sizes": [
+        21,
+        27,
+        11,
+        36,
+        5,
+        2,
+        9,
+        38
+      ]
+    },
+    "seed3": {
+      "brand": "Brand#13",
+      "type": "MEDIUM ANODIZED",
+      "sizes": [
+        38,
+        31,
+        32,
+        33,
+        35,
+        37,
+        6,
+        15
+      ]
+    },
+    "seed4": {
+      "brand": "Brand#13",
+      "type": "LARGE BRUSHED",
+      "sizes": [
+        8,
+        7,
+        38,
+        11,
+        15,
+        40,
+        44,
+        39
+      ]
+    },
+    "seed5": {
+      "brand": "Brand#33",
+      "type": "LARGE PLATED",
+      "sizes": [
+        24,
+        11,
+        10,
+        9,
+        45,
+        6,
+        28,
+        15
+      ]
+    },
+    "seed6": {
+      "brand": "Brand#53",
+      "type": "MEDIUM BRUSHED",
+      "sizes": [
+        41,
+        15,
+        31,
+        6,
+        29,
+        16,
+        12,
+        35
+      ]
+    },
+    "seed7": {
+      "brand": "Brand#24",
+      "type": "MEDIUM PLATED",
+      "sizes": [
+        8,
+        20,
+        4,
+        50,
+        13,
+        27,
+        40,
+        12
+      ]
+    },
+    "seed8": {
+      "brand": "Brand#44",
+      "type": "SMALL BRUSHED",
+      "sizes": [
+        25,
+        24,
+        1,
+        48,
+        43,
+        37,
+        23,
+        32
+      ]
+    },
+    "seed9": {
+      "brand": "Brand#44",
+      "type": "LARGE POLISHED",
+      "sizes": [
+        45,
+        49,
+        31,
+        26,
+        24,
+        40,
+        3,
+        12
+      ]
+    }
+  },
+  "q17": {
+    "seed1": {
+      "brand": "Brand#23",
+      "container": "SM BAG"
+    },
+    "seed10": {
+      "brand": "Brand#43",
+      "container": "LG CASE"
+    },
+    "seed11": {
+      "brand": "Brand#43",
+      "container": "MED PKG"
+    },
+    "seed12": {
+      "brand": "Brand#52",
+      "container": "WRAP JAR"
+    },
+    "seed13": {
+      "brand": "Brand#52",
+      "container": "LG CASE"
+    },
+    "seed14": {
+      "brand": "Brand#53",
+      "container": "JUMBO CASE"
+    },
+    "seed15": {
+      "brand": "Brand#53",
+      "container": "WRAP CAN"
+    },
+    "seed2": {
+      "brand": "Brand#33",
+      "container": "MED CASE"
+    },
+    "seed3": {
+      "brand": "Brand#32",
+      "container": "JUMBO PKG"
+    },
+    "seed4": {
+      "brand": "Brand#34",
+      "container": "SM PKG"
+    },
+    "seed5": {
+      "brand": "Brand#33",
+      "container": "MED JAR"
+    },
+    "seed6": {
+      "brand": "Brand#33",
+      "container": "WRAP CASE"
+    },
+    "seed7": {
+      "brand": "Brand#43",
+      "container": "SM PKG"
+    },
+    "seed8": {
+      "brand": "Brand#42",
+      "container": "MED JAR"
+    },
+    "seed9": {
+      "brand": "Brand#44",
+      "container": "WRAP JAR"
+    }
+  },
+  "q18": {
+    "seed1": {
+      "quantity": "314"
+    },
+    "seed10": {
+      "quantity": "314"
+    },
+    "seed11": {
+      "quantity": "313"
+    },
+    "seed12": {
+      "quantity": "313"
+    },
+    "seed13": {
+      "quantity": "313"
+    },
+    "seed14": {
+      "quantity": "314"
+    },
+    "seed15": {
+      "quantity": "314"
+    },
+    "seed2": {
+      "quantity": "313"
+    },
+    "seed3": {
+      "quantity": "313"
+    },
+    "seed4": {
+      "quantity": "314"
+    },
+    "seed5": {
+      "quantity": "314"
+    },
+    "seed6": {
+      "quantity": "313"
+    },
+    "seed7": {
+      "quantity": "313"
+    },
+    "seed8": {
+      "quantity": "313"
+    },
+    "seed9": {
+      "quantity": "314"
+    }
+  },
+  "q19": {
+    "seed1": {
+      "brand1": "Brand#13",
+      "brand2": "Brand#44",
+      "brand3": "Brand#22",
+      "quantity1": 5,
+      "quantity2": 12,
+      "quantity3": 28
+    },
+    "seed10": {
+      "brand1": "Brand#21",
+      "brand2": "Brand#13",
+      "brand3": "Brand#11",
+      "quantity1": 2,
+      "quantity2": 16,
+      "quantity3": 25
+    },
+    "seed11": {
+      "brand1": "Brand#31",
+      "brand2": "Brand#32",
+      "brand3": "Brand#42",
+      "quantity1": 9,
+      "quantity2": 10,
+      "quantity3": 28
+    },
+    "seed12": {
+      "brand1": "Brand#52",
+      "brand2": "Brand#52",
+      "brand3": "Brand#23",
+      "quantity1": 5,
+      "quantity2": 15,
+      "quantity3": 20
+    },
+    "seed13": {
+      "brand1": "Brand#22",
+      "brand2": "Brand#22",
+      "brand3": "Brand#14",
+      "quantity1": 1,
+      "quantity2": 20,
+      "quantity3": 23
+    },
+    "seed14": {
+      "brand1": "Brand#45",
+      "brand2": "Brand#34",
+      "brand3": "Brand#44",
+      "quantity1": 3,
+      "quantity2": 15,
+      "quantity3": 22
+    },
+    "seed15": {
+      "brand1": "Brand#55",
+      "brand2": "Brand#54",
+      "brand3": "Brand#21",
+      "quantity1": 9,
+      "quantity2": 20,
+      "quantity3": 25
+    },
+    "seed2": {
+      "brand1": "Brand#33",
+      "brand2": "Brand#14",
+      "brand3": "Brand#13",
+      "quantity1": 1,
+      "quantity2": 17,
+      "quantity3": 20
+    },
+    "seed3": {
+      "brand1": "Brand#44",
+      "brand2": "Brand#44",
+      "brand3": "Brand#44",
+      "quantity1": 7,
+      "quantity2": 11,
+      "quantity3": 23
+    },
+    "seed4": {
+      "brand1": "Brand#11",
+      "brand2": "Brand#41",
+      "brand3": "Brand#24",
+      "quantity1": 9,
+      "quantity2": 17,
+      "quantity3": 22
+    },
+    "seed5": {
+      "brand1": "Brand#31",
+      "brand2": "Brand#11",
+      "brand3": "Brand#51",
+      "quantity1": 5,
+      "quantity2": 12,
+      "quantity3": 25
+    },
+    "seed6": {
+      "brand1": "Brand#52",
+      "brand2": "Brand#31",
+      "brand3": "Brand#32",
+      "quantity1": 2,
+      "quantity2": 17,
+      "quantity3": 28
+    },
+    "seed7": {
+      "brand1": "Brand#12",
+      "brand2": "Brand#15",
+      "brand3": "Brand#13",
+      "quantity1": 8,
+      "quantity2": 11,
+      "quantity3": 20
+    },
+    "seed8": {
+      "brand1": "Brand#33",
+      "brand2": "Brand#35",
+      "brand3": "Brand#54",
+      "quantity1": 4,
+      "quantity2": 16,
+      "quantity3": 23
+    },
+    "seed9": {
+      "brand1": "Brand#55",
+      "brand2": "Brand#33",
+      "brand3": "Brand#34",
+      "quantity1": 6,
+      "quantity2": 11,
+      "quantity3": 22
+    }
+  },
+  "q20": {
+    "seed1": {
+      "color": "khaki",
+      "date": "1996-01-01",
+      "nation": "CHINA"
+    },
+    "seed10": {
+      "color": "beige",
+      "date": "1993-01-01",
+      "nation": "IRAN"
+    },
+    "seed11": {
+      "color": "burnished",
+      "date": "1995-01-01",
+      "nation": "INDONESIA"
+    },
+    "seed12": {
+      "color": "cyan",
+      "date": "1997-01-01",
+      "nation": "GERMANY"
+    },
+    "seed13": {
+      "color": "forest",
+      "date": "1994-01-01",
+      "nation": "FRANCE"
+    },
+    "seed14": {
+      "color": "sandy",
+      "date": "1995-01-01",
+      "nation": "ROMANIA"
+    },
+    "seed15": {
+      "color": "steel",
+      "date": "1997-01-01",
+      "nation": "CHINA"
+    },
+    "seed2": {
+      "color": "magenta",
+      "date": "1993-01-01",
+      "nation": "PERU"
+    },
+    "seed3": {
+      "color": "navajo",
+      "date": "1996-01-01",
+      "nation": "MOROCCO"
+    },
+    "seed4": {
+      "color": "brown",
+      "date": "1996-01-01",
+      "nation": "EGYPT"
+    },
+    "seed5": {
+      "color": "cornsilk",
+      "date": "1993-01-01",
+      "nation": "BRAZIL"
+    },
+    "seed6": {
+      "color": "firebrick",
+      "date": "1995-01-01",
+      "nation": "ARGENTINA"
+    },
+    "seed7": {
+      "color": "grey",
+      "date": "1993-01-01",
+      "nation": "UNITED STATES"
+    },
+    "seed8": {
+      "color": "lawn",
+      "date": "1995-01-01",
+      "nation": "UNITED KINGDOM"
+    },
+    "seed9": {
+      "color": "violet",
+      "date": "1995-01-01",
+      "nation": "IRAQ"
+    }
+  },
+  "q21": {
+    "seed1": {
+      "nation": "CHINA"
+    },
+    "seed10": {
+      "nation": "ALGERIA"
+    },
+    "seed11": {
+      "nation": "IRAQ"
+    },
+    "seed12": {
+      "nation": "RUSSIA"
+    },
+    "seed13": {
+      "nation": "INDIA"
+    },
+    "seed14": {
+      "nation": "IRAQ"
+    },
+    "seed15": {
+      "nation": "VIETNAM"
+    },
+    "seed2": {
+      "nation": "EGYPT"
+    },
+    "seed3": {
+      "nation": "MOROCCO"
+    },
+    "seed4": {
+      "nation": "CHINA"
+    },
+    "seed5": {
+      "nation": "EGYPT"
+    },
+    "seed6": {
+      "nation": "KENYA"
+    },
+    "seed7": {
+      "nation": "ALGERIA"
+    },
+    "seed8": {
+      "nation": "IRAQ"
+    },
+    "seed9": {
+      "nation": "KENYA"
+    }
+  },
+  "q22": {
+    "seed1": {
+      "i1": [
+        "38",
+        "29",
+        "27",
+        "32",
+        "21",
+        "40",
+        "42"
+      ]
+    },
+    "seed10": {
+      "i1": [
+        "30",
+        "22",
+        "21",
+        "27",
+        "36",
+        "35",
+        "33"
+      ]
+    },
+    "seed11": {
+      "i1": [
+        "29",
+        "38",
+        "27",
+        "40",
+        "24",
+        "23",
+        "35"
+      ]
+    },
+    "seed12": {
+      "i1": [
+        "27",
+        "30",
+        "32",
+        "22",
+        "34",
+        "26",
+        "37"
+      ]
+    },
+    "seed13": {
+      "i1": [
+        "26",
+        "21",
+        "38",
+        "24",
+        "44",
+        "31",
+        "22"
+      ]
+    },
+    "seed14": {
+      "i1": [
+        "39",
+        "35",
+        "20",
+        "28",
+        "34",
+        "30",
+        "23"
+      ]
+    },
+    "seed15": {
+      "i1": [
+        "38",
+        "27",
+        "22",
+        "42",
+        "44",
+        "35",
+        "30"
+      ]
+    },
+    "seed2": {
+      "i1": [
+        "37",
+        "21",
+        "32",
+        "24",
+        "38",
+        "26",
+        "44"
+      ]
+    },
+    "seed3": {
+      "i1": [
+        "35",
+        "36",
+        "38",
+        "22",
+        "27",
+        "31",
+        "26"
+      ]
+    },
+    "seed4": {
+      "i1": [
+        "24",
+        "26",
+        "39",
+        "41",
+        "22",
+        "29",
+        "35"
+      ]
+    },
+    "seed5": {
+      "i1": [
+        "22",
+        "42",
+        "20",
+        "33",
+        "27",
+        "35",
+        "37"
+      ]
+    },
+    "seed6": {
+      "i1": [
+        "21",
+        "34",
+        "27",
+        "25",
+        "37",
+        "40",
+        "38"
+      ]
+    },
+    "seed7": {
+      "i1": [
+        "44",
+        "25",
+        "32",
+        "39",
+        "26",
+        "24",
+        "40"
+      ]
+    },
+    "seed8": {
+      "i1": [
+        "43",
+        "41",
+        "38",
+        "31",
+        "35",
+        "23",
+        "42"
+      ]
+    },
+    "seed9": {
+      "i1": [
+        "31",
+        "20",
+        "39",
+        "35",
+        "26",
+        "29",
+        "32"
+      ]
+    }
+  }
+}
