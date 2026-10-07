@@ -1,0 +1,49 @@
+\begin{tabular}{lr}
+\toprule
+Parameter & Value \\
+\midrule
+\multicolumn{2}{l}{\textit{Function}} \\
+vCPU per function $c$ & 2 vCPU \\
+Memory per function & 2048 MiB \\
+Requests per instance & 1 request \\
+Function timeout & 300 s \\
+Minimum instances & 30 instance \\
+Maximum instances & 70 instance \\
+\midrule
+\multicolumn{2}{l}{\textit{Runner}} \\
+Functions running at once per stage (\texttt{max\_parallel}) & 70 function \\
+Default partition size (\texttt{max\_size\_mb}) & 50 MB \\
+Reader threads per scan function (\texttt{max\_workers}) & 4 thread \\
+Retries per task & 3 retry \\
+Rows per task (limit) & $4.5\times10^{7}$ row \\
+\midrule
+\multicolumn{2}{l}{\textit{Storage (MinIO, fitted)}} \\
+Read bandwidth of one function alone $B_1$ & 234.1 MB/s \\
+Peak aggregate read bandwidth $B_{max}$ & 2403 MB/s \\
+Slowdown per concurrent reader $\gamma$ & 0.013 1/function \\
+\midrule
+\multicolumn{2}{l}{\textit{Model (calibrated)}} \\
+S3 bandwidth $bw^{s3}$ & 147 MB/s \\
+S3 slowdown per concurrent function $\beta^{s3}$ & 0.2744 ms/MB \\
+NFS bandwidth $bw^{nfs}$ & 784.1 MB/s \\
+NFS latency $\kappa^{lat}_{nfs}$ & 0.9428 ms/request \\
+Dispatch time $\kappa^{disp}$ & 46.56 ms/function \\
+Scan processing rate $\kappa^{cpu}_{scan}$ & 256 MB/s per vCPU \\
+Join processing rate $\kappa^{cpu}_{join}$ & 117.8 MB/s per vCPU \\
+Aggregate processing rate $\kappa^{cpu}_{agg}$ & 29.46 MB/s per vCPU \\
+Join slowdown per concurrent function $\beta^{cpu}_{join}$ & 0.1508 ms/MB \\
+Aggregate slowdown per concurrent function $\beta^{cpu}_{agg}$ & 0.1547 ms/MB \\
+Aggregate request latency $\kappa^{qlat}_{agg}$ & 0.59 ms/request \\
+\midrule
+\multicolumn{2}{l}{\textit{Model (fixed)}} \\
+Bloom-filter hashing rate $r^{hash}$ & $5\times10^{7}$ hash/s per vCPU \\
+\midrule
+\multicolumn{2}{l}{\textit{Price}} \\
+Invocation & $2\times10^{-7}$ \$/invocation \\
+Compute & $1.667\times10^{-5}$ \$/GB-s \\
+S3 GET & $4\times10^{-7}$ \$/request \\
+S3 PUT & $5\times10^{-6}$ \$/request \\
+S3 storage & 0.023 \$/GB-month \\
+NFS storage & 0.3 \$/GB-month \\
+\bottomrule
+\end{tabular}

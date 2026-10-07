@@ -1,0 +1,33 @@
+category,parameter,symbol,value,unit,source
+Function,vCPU per function,c,2.0,vCPU,deploy.yaml
+Function,Memory per function,,2048,MiB,deploy.yaml
+Function,Requests per instance,,1,request,deploy.yaml
+Function,Function timeout,,300,s,deploy.yaml
+Function,Minimum instances,,30,instance,deploy.yaml
+Function,Maximum instances,,70,instance,deploy.yaml
+Runner,Functions running at once per stage,max_parallel,70,function,run-seek15.py
+Runner,Default partition size,max_size_mb,50,MB,Runner.py
+Runner,Reader threads per scan function,max_workers,4,thread,Runner.py
+Runner,Retries per task,,3,retry,Runner.py
+Runner,Rows per task (limit),,45000000,row,Helpers.py
+"Storage (MinIO, fitted)",Read bandwidth of one function alone,B1,234.1383888871507,MB/s,minio.json
+"Storage (MinIO, fitted)",Peak aggregate read bandwidth,Bmax,2403.4062022887388,MB/s,minio.json
+"Storage (MinIO, fitted)",Slowdown per concurrent reader,gamma,0.013000000000000001,1/function,minio.json
+Model (calibrated),S3 bandwidth,bw_s3,146.99953841240267,MB/s,cost model v5
+Model (calibrated),S3 slowdown per concurrent function,beta_s3,0.2744302535988476,ms/MB,cost model v5
+Model (calibrated),NFS bandwidth,bw_nfs,784.059090638384,MB/s,cost model v5
+Model (calibrated),NFS latency,lat_nfs,0.9427780265575261,ms/request,cost model v5
+Model (calibrated),Dispatch time,kappa_disp,46.56419563293457,ms/function,cost model v5
+Model (calibrated),Scan processing rate,kappa_cpu,256.04061438736375,MB/s per vCPU,cost model v5
+Model (calibrated),Join processing rate,kappa_cpu,117.79462768739567,MB/s per vCPU,cost model v5
+Model (calibrated),Aggregate processing rate,kappa_cpu,29.462879766449852,MB/s per vCPU,cost model v5
+Model (calibrated),Join slowdown per concurrent function,beta_cpu,0.150766322459073,ms/MB,cost model v5
+Model (calibrated),Aggregate slowdown per concurrent function,beta_cpu,0.15465747376417427,ms/MB,cost model v5
+Model (calibrated),Aggregate request latency,kappa_qlat,0.5900387304979094,ms/request,cost model v5
+Model (fixed),Bloom-filter hashing rate,r_hash,50000000.0,hash/s per vCPU,cost model v5
+Price,Invocation,,2e-07,$/invocation,AWS Lambda
+Price,Compute,,1.66667e-05,$/GB-s,AWS Lambda
+Price,S3 GET,,4e-07,$/request,AWS S3
+Price,S3 PUT,,5e-06,$/request,AWS S3
+Price,S3 storage,,0.023,$/GB-month,AWS S3
+Price,NFS storage,,0.30000000000000004,$/GB-month,AWS EFS

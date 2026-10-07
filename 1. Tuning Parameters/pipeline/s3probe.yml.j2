@@ -1,0 +1,27 @@
+name: s3probe
+description: S3 read probe for the size x parallelism sweep - one scan of lineitem, almost nothing written
+
+variables:
+  enable_bf: $enable_bf
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: '$s3_metadata/{{ bucket }}.json'
+  nfs_folder: '/mnt/filters'
+
+steps:
+  - name: step1-lineitem
+    func: scan
+    input: 's3://{{ bucket }}/lineitem.parquet'
+    from_previous_task: None
+    params:
+      select: SELECT l_orderkey, l_partkey, l_suppkey, l_quantity, l_extendedprice, l_discount, l_shipdate
+      sql_clauses: WHERE l_quantity * 2 < 0
+      output_file: '{{ base_path }}/$task_name/$random.parquet'
+
+  - name: step2-summary-clean
+    func: summary_clean
+    params:
+      output_s3: '{{ base_path }}'
+      nfs_folder: '{{ nfs_folder }}'
+      is_delete: True
