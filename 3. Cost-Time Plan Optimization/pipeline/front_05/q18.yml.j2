@@ -1,0 +1,156 @@
+name: q18
+description: TPC-H Query 18 - Large Volume Customer Query
+variables:
+  enable_bf: 1
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+steps:
+- name: step1-lineitem-agg
+  func: scan
+  input: s3://$bucket/lineitem.parquet
+  from_previous_task: None
+  params:
+    select: SELECT l_orderkey, l_quantity
+    sql_clauses: 'WHERE l_orderkey IS NOT NULL
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 100
+- name: step1-lineitem-agg--combine
+  func: aggregate
+  from_previous_task: step1-lineitem-agg
+  params:
+    select: SELECT l_orderkey, SUM(l_quantity) AS sum_qty
+    sql_clauses: GROUP BY l_orderkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step2-filter-large-orders
+  func: aggregate
+  from_previous_task: step1-lineitem-agg--combine
+  params:
+    select: SELECT l_orderkey
+    sql_clauses: 'GROUP BY l_orderkey HAVING SUM(sum_qty) > $parm1
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: l_orderkey
+    bf_path: /mnt/filters/$task_name/$random.bin
+    est_elements: 60000
+- name: step2-filter-large-orders--mergebf
+  func: merge_bf
+  from_previous_task: step2-filter-large-orders
+  params:
+    file_output: /mnt/filters/$task_name/$random.bin
+    error_rate: 0.001
+- name: step3-orders
+  func: scan
+  input: s3://$bucket/orders.parquet
+  from_previous_task: step2-filter-large-orders--mergebf
+  params:
+    select: SELECT o_orderkey, o_custkey, o_orderdate, o_totalprice
+    sql_clauses: "WHERE o_orderkey IS NOT NULL\n  AND o_custkey IS NOT NULL\n"
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: o_orderkey
+    filter_by_bf: true
+  max_size_mb: 200
+- name: step3-orders--combine
+  func: aggregate
+  from_previous_task: step3-orders
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-customer
+  func: scan
+  input: s3://$bucket/customer.parquet
+  from_previous_task: None
+  params:
+    select: SELECT c_custkey, c_name
+    sql_clauses: 'WHERE c_custkey IS NOT NULL
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 1000
+- name: step4-customer--combine
+  func: aggregate
+  from_previous_task: step4-customer
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step5-lineitem
+  func: scan
+  input: s3://$bucket/lineitem.parquet
+  from_previous_task: step2-filter-large-orders--mergebf
+  params:
+    select: SELECT l_orderkey, l_quantity
+    sql_clauses: 'WHERE l_orderkey IS NOT NULL
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: l_orderkey
+    filter_by_bf: true
+  max_size_mb: 100
+- name: step5-lineitem--combine
+  func: aggregate
+  from_previous_task: step5-lineitem
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-join-orders-filter
+  func: broadcast_join
+  from_previous_task:
+  - step2-filter-large-orders
+  - step3-orders--combine
+  params:
+    probe_select: SELECT o_orderkey, o_custkey, o_orderdate, o_totalprice
+    join_condition: l_orderkey = o_orderkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-join-orders-filter--combine
+  func: aggregate
+  from_previous_task: step6-join-orders-filter
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step7-join-customer-orders
+  func: broadcast_join
+  from_previous_task:
+  - step4-customer--combine
+  - step6-join-orders-filter--combine
+  params:
+    probe_select: SELECT c_name, o_orderkey, o_orderdate, o_totalprice
+    join_condition: c_custkey = o_custkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step7-join-customer-orders--combine
+  func: aggregate
+  from_previous_task: step7-join-customer-orders
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step8-join-lineitem
+  func: broadcast_join
+  from_previous_task:
+  - step7-join-customer-orders--combine
+  - step5-lineitem--combine
+  params:
+    probe_select: SELECT c_name, o_orderkey, o_orderdate, o_totalprice, l_quantity
+    join_condition: o_orderkey = l_orderkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step8-join-lineitem--combine
+  func: aggregate
+  from_previous_task: step8-join-lineitem
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step9-agg
+  func: aggregate
+  from_previous_task: step8-join-lineitem--combine
+  params:
+    select: "SELECT c_name, o_orderkey, o_orderdate, o_totalprice,\n       SUM(l_quantity)\
+      \ AS total_qty\n"
+    sql_clauses: 'GROUP BY c_name, o_orderkey, o_orderdate, o_totalprice ORDER BY
+      o_totalprice DESC, o_orderdate
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step10-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

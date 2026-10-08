@@ -1,0 +1,72 @@
+name: q12
+description: TPC-H Query 12
+variables:
+  enable_bf: 0
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+  parm2: $parm2
+  parm3: $parm3
+steps:
+- name: step1-lineitem
+  func: scan
+  input: s3://$bucket/lineitem.parquet
+  from_previous_tasks: None
+  params:
+    select: 'SELECT l_orderkey, l_shipmode, l_commitdate, l_receiptdate, l_shipdate
+
+      '
+    sql_clauses: 'WHERE l_shipmode IN (''$parm1'', ''$parm2'')  AND l_receiptdate>=''$parm3''  AND
+      l_receiptdate < DATE ''$parm3'' + INTERVAL 1 year AND l_shipdate < l_commitdate  AND
+      l_commitdate < l_receiptdate
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step1-lineitem--combine-make-bf
+  func: aggregate
+  from_previous_task: step1-lineitem
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step2-orders
+  func: scan
+  input: s3://$bucket/orders.parquet
+  params:
+    select: SELECT o_orderkey, o_orderpriority
+    output_file: $base_path/$task_name/$random.parquet
+- name: step2-orders--combine
+  func: aggregate
+  from_previous_task: step2-orders
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join
+  func: broadcast_join
+  from_previous_task:
+  - step2-orders--combine
+  - step1-lineitem--combine-make-bf
+  params:
+    probe_select: SELECT l_shipmode, o_orderpriority
+    join_condition: l_orderkey = o_orderkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join--combine
+  func: aggregate
+  from_previous_task: step3-join
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-agg
+  func: aggregate
+  from_previous_task: step3-join--combine
+  params:
+    select: "SELECT\n    l_shipmode,\n    SUM(CASE WHEN o_orderpriority IN ('$parm1',\
+      \ '$parm2') THEN 1 ELSE 0 END ) AS high_line_count,\n    SUM( CASE WHEN o_orderpriority\
+      \ NOT IN ('$parm1', '$parm2') THEN 1 ELSE 0 END ) AS low_line_count\n"
+    sql_clauses: GROUP BY l_shipmode
+    output_file: $base_path/$task_name/$random.parquet
+- name: step5-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

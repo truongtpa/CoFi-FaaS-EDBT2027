@@ -1,0 +1,108 @@
+name: q16
+description: TPC-H Query 16 - Parts/Supplier Relationship
+variables:
+  enable_bf: 0
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+  parm2: $parm2
+steps:
+- name: step1-part
+  func: scan
+  input: s3://$bucket/part.parquet
+  from_previous_task: None
+  params:
+    select: SELECT p_partkey, p_brand, p_type, p_size
+    sql_clauses: "WHERE p_brand != '$parm1'\n  AND p_type NOT LIKE '$parm2%'\n  AND\
+      \ p_size IN (49, 14, 23, 45, 19, 3, 36, 9)\n  AND p_partkey IS NOT NULL\n"
+    output_file: $base_path/$task_name/$random.parquet
+- name: step1-part--combine
+  func: aggregate
+  from_previous_task: step1-part
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step2-supplier-complaints
+  func: scan
+  input: s3://$bucket/supplier.parquet
+  from_previous_task: None
+  params:
+    select: SELECT s_suppkey
+    sql_clauses: "WHERE s_comment LIKE '%Customer%Complaints%'\n  AND s_suppkey IS\
+      \ NOT NULL\n"
+    output_file: $base_path/$task_name/$random.parquet
+- name: step2-supplier-complaints--combine
+  func: aggregate
+  from_previous_task: step2-supplier-complaints
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-partsupp
+  func: scan
+  input: s3://$bucket/partsupp.parquet
+  params:
+    select: SELECT ps_partkey, ps_suppkey
+    sql_clauses: WHERE ps_partkey IS NOT NULL AND ps_suppkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-partsupp--combine
+  func: aggregate
+  from_previous_task: step3-partsupp
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-filter-complaint-supplier
+  func: broadcast_join
+  from_previous_task:
+  - step2-supplier-complaints--combine
+  - step3-partsupp--combine
+  params:
+    probe_select: SELECT ps_partkey, ps_suppkey
+    join_condition: s_suppkey = ps_suppkey
+    join_type: left_anti
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-filter-complaint-supplier--combine
+  func: aggregate
+  from_previous_task: step4-filter-complaint-supplier
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step5-join-part-partsupp
+  func: broadcast_join
+  from_previous_task:
+  - step1-part--combine
+  - step4-filter-complaint-supplier--combine
+  params:
+    probe_select: SELECT ps_suppkey, p_partkey, p_brand, p_type, p_size
+    join_condition: p_partkey = ps_partkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step5-join-part-partsupp--combine
+  func: aggregate
+  from_previous_task: step5-join-part-partsupp
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-agg
+  func: aggregate
+  from_previous_task: step5-join-part-partsupp--combine
+  params:
+    select: "SELECT p_brand, p_type, p_size,\n       COUNT(DISTINCT ps_suppkey) AS\
+      \ supplier_cnt\n"
+    sql_clauses: 'GROUP BY p_brand, p_type, p_size ORDER BY supplier_cnt DESC, p_brand,
+      p_type, p_size
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-agg--reduce
+  func: aggregate
+  from_previous_task: step6-agg
+  params:
+    select: "SELECT p_brand, p_type, p_size,\n       SUM(supplier_cnt) AS supplier_cnt\n"
+    sql_clauses: 'GROUP BY p_brand, p_type, p_size ORDER BY supplier_cnt DESC, p_brand,
+      p_type, p_size
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step7-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

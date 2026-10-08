@@ -1,0 +1,212 @@
+name: q9
+description: TPC-H Query 09 - Product Type Profit Measure Query
+variables:
+  enable_bf: 1
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+steps:
+- name: step1-part
+  func: scan
+  input: s3://$bucket/part.parquet
+  from_previous_task: None
+  params:
+    select: SELECT p_partkey
+    sql_clauses: "WHERE p_name LIKE '%$parm1%'\n  AND p_partkey IS NOT NULL\n"
+    output_file: $base_path/$task_name/$random.parquet
+- name: step1-part--combine
+  func: aggregate
+  from_previous_task: step1-part
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: p_partkey
+    bf_path: /mnt/filters/$task_name/$random.bin
+    est_elements: 200000
+- name: step1-part--mergebf
+  func: merge_bf
+  from_previous_task: step1-part--combine
+  params:
+    file_output: /mnt/filters/$task_name/$random.bin
+    error_rate: 0.001
+- name: step2-partsupp
+  func: scan
+  input: s3://$bucket/partsupp.parquet
+  from_previous_task: step1-part--mergebf
+  params:
+    select: SELECT ps_partkey, ps_suppkey, ps_supplycost
+    sql_clauses: "WHERE ps_partkey IS NOT NULL\n  AND ps_suppkey IS NOT NULL\n"
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: ps_partkey
+    filter_by_bf: true
+- name: step2-partsupp--combine
+  func: aggregate
+  from_previous_task: step2-partsupp
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-lineitem
+  func: scan
+  input: s3://$bucket/lineitem.parquet
+  from_previous_task: step1-part--mergebf
+  params:
+    select: SELECT l_orderkey, l_partkey, l_suppkey, l_quantity, l_extendedprice,
+      l_discount
+    sql_clauses: "WHERE l_orderkey IS NOT NULL\n  AND l_partkey IS NOT NULL\n  AND\
+      \ l_suppkey IS NOT NULL\n"
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: l_partkey
+    filter_by_bf: true
+  max_size_mb: 200
+- name: step3-lineitem--combine
+  func: aggregate
+  from_previous_task: step3-lineitem
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-supplier
+  func: scan
+  input: s3://$bucket/supplier.parquet
+  from_previous_task: None
+  params:
+    select: SELECT s_suppkey, s_nationkey
+    sql_clauses: "WHERE s_suppkey IS NOT NULL\n  AND s_nationkey IS NOT NULL\n"
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-supplier--combine
+  func: aggregate
+  from_previous_task: step4-supplier
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 1000
+- name: step5-orders
+  func: scan
+  input: s3://$bucket/orders.parquet
+  from_previous_task: None
+  params:
+    select: SELECT o_orderkey, o_orderdate
+    sql_clauses: 'WHERE o_orderkey IS NOT NULL
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 100
+- name: step5-orders--combine
+  func: aggregate
+  from_previous_task: step5-orders
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-nation
+  func: scan
+  input: s3://$bucket/nation.parquet
+  from_previous_task: None
+  params:
+    select: SELECT n_nationkey, n_name
+    sql_clauses: 'WHERE n_nationkey IS NOT NULL
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-nation--combine
+  func: aggregate
+  from_previous_task: step6-nation
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step7-join-lineitem-part
+  func: broadcast_join
+  from_previous_task:
+  - step1-part--combine
+  - step3-lineitem--combine
+  params:
+    probe_select: SELECT l_orderkey, l_partkey, l_suppkey, l_quantity, l_extendedprice,
+      l_discount
+    join_condition: p_partkey = l_partkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step7-join-lineitem-part--combine
+  func: aggregate
+  from_previous_task: step7-join-lineitem-part
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step8-join-partsupp
+  func: broadcast_join
+  from_previous_task:
+  - step2-partsupp--combine
+  - step7-join-lineitem-part--combine
+  params:
+    probe_select: 'SELECT l_orderkey, l_suppkey, l_quantity, l_extendedprice, l_discount,
+      ps_supplycost
+
+      '
+    join_condition: 'ps_partkey = l_partkey AND ps_suppkey = l_suppkey
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step8-join-partsupp--combine
+  func: aggregate
+  from_previous_task: step8-join-partsupp
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step9-join-supplier
+  func: broadcast_join
+  from_previous_task:
+  - step4-supplier--combine
+  - step8-join-partsupp--combine
+  params:
+    probe_select: 'SELECT l_orderkey, s_nationkey, l_quantity, l_extendedprice, l_discount,
+      ps_supplycost
+
+      '
+    join_condition: l_suppkey = s_suppkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step9-join-supplier--combine
+  func: aggregate
+  from_previous_task: step9-join-supplier
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step10-join-orders
+  func: broadcast_join
+  from_previous_task:
+  - step5-orders--combine
+  - step9-join-supplier--combine
+  params:
+    probe_select: 'SELECT o_orderdate, s_nationkey, l_quantity, l_extendedprice, l_discount,
+      ps_supplycost
+
+      '
+    join_condition: o_orderkey = l_orderkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step10-join-orders--combine
+  func: aggregate
+  from_previous_task: step10-join-orders
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step11-join-nation
+  func: broadcast_join
+  from_previous_task:
+  - step6-nation--combine
+  - step10-join-orders--combine
+  params:
+    probe_select: 'SELECT n_name, o_orderdate, l_quantity, l_extendedprice, l_discount,
+      ps_supplycost
+
+      '
+    join_condition: s_nationkey = n_nationkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step11-join-nation--combine
+  func: aggregate
+  from_previous_task: step11-join-nation
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step12-agg
+  func: aggregate
+  from_previous_task: step11-join-nation--combine
+  params:
+    select: "SELECT n_name AS nation,\n       YEAR(o_orderdate) AS o_year,\n     \
+      \  SUM(l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity) AS sum_profit\n"
+    sql_clauses: 'GROUP BY n_name, YEAR(o_orderdate) ORDER BY nation, o_year DESC
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step13-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

@@ -1,0 +1,87 @@
+name: q13
+description: TPC-H Query 13 - Customer Distribution Query
+variables:
+  enable_bf: 1
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+  parm2: $parm2
+steps:
+- name: step1-customer
+  func: scan
+  input: s3://$bucket/customer.parquet
+  from_previous_task: None
+  params:
+    select: SELECT c_custkey
+    sql_clauses: 'WHERE c_custkey IS NOT NULL
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step1-customer--combine
+  func: aggregate
+  from_previous_task: step1-customer
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step2-orders
+  func: scan
+  input: s3://$bucket/orders.parquet
+  from_previous_task: None
+  params:
+    select: SELECT o_orderkey, o_custkey
+    sql_clauses: "WHERE o_comment NOT LIKE '%$parm1%$parm2%'\n  AND o_custkey IS NOT\
+      \ NULL\n  AND o_orderkey IS NOT NULL\n"
+    output_file: $base_path/$task_name/$random.parquet
+- name: step2-orders--combine
+  func: aggregate
+  from_previous_task: step2-orders
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-agg-orders-per-customer
+  func: aggregate
+  from_previous_task: step2-orders--combine
+  params:
+    select: SELECT o_custkey, COUNT(*) AS c_count
+    sql_clauses: GROUP BY o_custkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-agg-orders-per-customer--combine
+  func: aggregate
+  from_previous_task: step3-agg-orders-per-customer
+  params:
+    select: SELECT o_custkey, SUM(c_count) AS c_count
+    sql_clauses: GROUP BY o_custkey
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 100
+- name: step4-join-customer-ordercount
+  func: broadcast_join
+  from_previous_task:
+  - step1-customer--combine
+  - step3-agg-orders-per-customer--combine
+  params:
+    probe_select: SELECT COALESCE(c_count, 0) AS c_count
+    join_condition: c_custkey = o_custkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-join-customer-ordercount--combine
+  func: aggregate
+  from_previous_task: step4-join-customer-ordercount
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step5-agg
+  func: aggregate
+  from_previous_task: step4-join-customer-ordercount--combine
+  params:
+    select: 'SELECT c_count, COUNT(*) AS custdist
+
+      '
+    sql_clauses: 'GROUP BY c_count ORDER BY custdist DESC, c_count DESC
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

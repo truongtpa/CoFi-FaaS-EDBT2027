@@ -1,0 +1,150 @@
+name: q11
+description: TPC-H Query 11 - Important Stock Identification
+variables:
+  enable_bf: 1
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+  parm2: $parm2
+steps:
+- name: step1-nation
+  func: scan
+  input: s3://$bucket/nation.parquet
+  from_previous_task: None
+  params:
+    select: SELECT n_nationkey
+    sql_clauses: WHERE n_name = '$parm1' AND n_nationkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+- name: step1-nation--combine
+  func: aggregate
+  from_previous_task: step1-nation
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: n_nationkey
+    bf_path: /mnt/filters/$task_name/$random.bin
+    est_elements: 1
+- name: step1-nation--mergebf
+  func: merge_bf
+  from_previous_task: step1-nation--combine
+  params:
+    file_output: /mnt/filters/$task_name/$random.bin
+    error_rate: 0.001
+- name: step2-supplier
+  func: scan
+  input: s3://$bucket/supplier.parquet
+  from_previous_task: step1-nation--mergebf
+  params:
+    select: SELECT s_suppkey, s_nationkey
+    sql_clauses: WHERE s_suppkey IS NOT NULL AND s_nationkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: s_nationkey
+    filter_by_bf: true
+- name: step2-supplier--combine
+  func: aggregate
+  from_previous_task: step2-supplier
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join-nation-supplier
+  func: broadcast_join
+  from_previous_task:
+  - step1-nation--combine
+  - step2-supplier--combine
+  params:
+    probe_select: SELECT s_suppkey
+    join_condition: n_nationkey = s_nationkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join-nation-supplier--combine
+  func: aggregate
+  from_previous_task: step3-join-nation-supplier
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: s_suppkey
+    bf_path: /mnt/filters/$task_name/$random.bin
+    est_elements: 100000
+- name: step3-join-nation-supplier--mergebf
+  func: merge_bf
+  from_previous_task: step3-join-nation-supplier--combine
+  params:
+    file_output: /mnt/filters/$task_name/$random.bin
+    error_rate: 0.001
+- name: step4-partsupp
+  func: scan
+  input: s3://$bucket/partsupp.parquet
+  from_previous_task: step3-join-nation-supplier--mergebf
+  params:
+    select: SELECT ps_partkey, ps_suppkey, ps_availqty, ps_supplycost
+    sql_clauses: WHERE ps_partkey IS NOT NULL AND ps_suppkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: ps_suppkey
+    filter_by_bf: true
+  max_size_mb: 25
+- name: step4-partsupp--combine
+  func: aggregate
+  from_previous_task: step4-partsupp
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step5-join-supplier-partsupp
+  func: broadcast_join
+  from_previous_task:
+  - step3-join-nation-supplier--combine
+  - step4-partsupp--combine
+  params:
+    probe_select: SELECT ps_partkey, ps_availqty, ps_supplycost
+    join_condition: s_suppkey = ps_suppkey
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step5-join-supplier-partsupp--combine
+  func: aggregate
+  from_previous_task: step5-join-supplier-partsupp
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step6-agg-partkey
+  func: aggregate
+  from_previous_task: step5-join-supplier-partsupp--combine
+  params:
+    select: SELECT ps_partkey, SUM(ps_supplycost * ps_availqty) AS value
+    sql_clauses: GROUP BY ps_partkey
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step7-total-value
+  func: aggregate
+  from_previous_task: step6-agg-partkey
+  params:
+    select: SELECT SUM(value) AS total_value
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 25
+- name: step8-join-having
+  func: broadcast_join
+  from_previous_task:
+  - step7-total-value
+  - step6-agg-partkey
+  params:
+    probe_select: SELECT ps_partkey, value
+    join_condition: 'probe_table.value > build_table.total_value * $parm2
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step8-join-having--combine
+  func: aggregate
+  from_previous_task: step8-join-having
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step9-agg
+  func: aggregate
+  from_previous_task: step8-join-having--combine
+  params:
+    select: SELECT ps_partkey, value
+    sql_clauses: ORDER BY value DESC
+    output_file: $base_path/$task_name/$random.parquet
+- name: step10-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

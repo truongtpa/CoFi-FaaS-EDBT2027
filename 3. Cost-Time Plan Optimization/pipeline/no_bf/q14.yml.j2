@@ -1,0 +1,64 @@
+name: q14
+description: TPC-H Query 14
+variables:
+  enable_bf: 0
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+steps:
+- name: step1-lineitem
+  func: scan
+  input: s3://$bucket/lineitem.parquet
+  from_previous_task: none
+  params:
+    select: SELECT l_partkey, l_extendedprice, l_discount
+    sql_clauses: WHERE l_shipdate >= DATE '$parm1' AND l_shipdate < DATE '$parm1'
+      + INTERVAL '1' month
+    output_file: $base_path/$task_name/$random.parquet
+- name: step1-lineitem--combine-make-bf
+  func: aggregate
+  from_previous_task: step1-lineitem
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step2-part
+  func: scan
+  input: s3://$bucket/part.parquet
+  params:
+    select: SELECT p_partkey, p_type
+    output_file: $base_path/$task_name/$random.parquet
+- name: step1-part--combine
+  func: aggregate
+  from_previous_task: step2-part
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join
+  func: broadcast_join
+  from_previous_task:
+  - step1-part--combine
+  - step1-lineitem--combine-make-bf
+  params:
+    probe_select: SELECT l_discount, p_type, l_extendedprice
+    join_condition: l_partkey = p_partkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join--combine
+  func: aggregate
+  from_previous_task: step3-join
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-agg
+  func: aggregate
+  from_previous_task: step3-join--combine
+  params:
+    select: "SELECT\n  100.00 * SUM(\n  CASE\n      WHEN p_type LIKE 'PROMO%'\n  \
+      \    THEN l_extendedprice * (1 - l_discount)\n      ELSE 0\n  END) / SUM(l_extendedprice\
+      \ * (1 - l_discount)) AS promo_revenue\n"
+    output_file: $base_path/$task_name/$random.parquet
+- name: step5-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

@@ -1,0 +1,71 @@
+name: q4
+description: TPC-H Query 04
+variables:
+  enable_bf: 1
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+steps:
+- name: step1-orders
+  func: scan
+  input: s3://$bucket/orders.parquet
+  from_previous_task: None
+  params:
+    select: SELECT o_orderkey, o_orderpriority
+    sql_clauses: WHERE o_orderdate >= DATE '$parm1' AND o_orderdate < DATE '$parm1'
+      + INTERVAL 3 MONTH;
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 100
+- name: step1-orders--combine-and-make-bf
+  func: aggregate
+  from_previous_task: step1-orders
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step2-lineitem
+  func: scan
+  input: s3://$bucket/lineitem.parquet
+  params:
+    select: SELECT DISTINCT l_orderkey
+    sql_clauses: WHERE l_commitdate < l_receiptdate;
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 100
+- name: step2-lineitem--combine
+  func: aggregate
+  from_previous_task: step2-lineitem
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join
+  func: broadcast_join
+  from_previous_task:
+  - step1-orders--combine-and-make-bf
+  - step2-lineitem--combine
+  params:
+    probe_select: SELECT o_orderpriority
+    join_condition: o_orderkey = l_orderkey
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 100
+- name: step3-join--combine
+  func: aggregate
+  from_previous_task: step3-join
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-agg
+  func: aggregate
+  from_previous_task: step3-join--combine
+  params:
+    select: 'SELECT o_orderpriority, COUNT(*) AS order_count
+
+      '
+    sql_clauses: 'GROUP BY o_orderpriority ORDER BY o_orderpriority
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step7-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

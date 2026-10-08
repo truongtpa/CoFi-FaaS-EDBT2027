@@ -1,0 +1,117 @@
+name: q17
+description: TPC-H Query 17 - Small-Quantity-Order Revenue Query
+variables:
+  enable_bf: 1
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+  parm2: $parm2
+steps:
+- name: step1-part
+  func: scan
+  input: s3://$bucket/part.parquet
+  from_previous_task: None
+  params:
+    select: SELECT p_partkey
+    sql_clauses: "WHERE p_brand = '$parm1'\n  AND p_container = '$parm2'\n  AND p_partkey\
+      \ IS NOT NULL\n"
+    output_file: $base_path/$task_name/$random.parquet
+- name: step1-part--combine
+  func: aggregate
+  from_previous_task: step1-part
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: p_partkey
+    bf_path: /mnt/filters/$task_name/$random.bin
+    est_elements: 500000
+  max_size_mb: 1000
+- name: step1-part--mergebf
+  func: merge_bf
+  from_previous_task: step1-part--combine
+  params:
+    file_output: /mnt/filters/$task_name/$random.bin
+    error_rate: 0.001
+- name: step2-lineitem
+  func: scan
+  input: s3://$bucket/lineitem.parquet
+  from_previous_task: step1-part--mergebf
+  params:
+    select: SELECT l_partkey, l_quantity, l_extendedprice
+    sql_clauses: 'WHERE l_partkey IS NOT NULL
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: l_partkey
+    filter_by_bf: true
+  max_size_mb: 200
+- name: step2-lineitem--combine
+  func: aggregate
+  from_previous_task: step2-lineitem
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join-lineitem-part
+  func: broadcast_join
+  from_previous_task:
+  - step1-part--combine
+  - step2-lineitem--combine
+  params:
+    probe_select: SELECT l_partkey, l_quantity, l_extendedprice
+    join_condition: p_partkey = l_partkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join-lineitem-part--combine
+  func: aggregate
+  from_previous_task: step3-join-lineitem-part
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-avg-quantity
+  func: aggregate
+  from_previous_task: step3-join-lineitem-part--combine
+  params:
+    select: 'SELECT l_partkey, 0.2 * AVG(l_quantity) AS avg_qty
+
+      '
+    sql_clauses: GROUP BY l_partkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-avg-quantity--combine
+  func: aggregate
+  from_previous_task: step4-avg-quantity
+  params:
+    select: 'SELECT l_partkey, AVG(avg_qty) AS avg_qty
+
+      '
+    sql_clauses: GROUP BY l_partkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step5-join-filter-quantity
+  func: broadcast_join
+  from_previous_task:
+  - step4-avg-quantity--combine
+  - step3-join-lineitem-part--combine
+  params:
+    probe_select: SELECT l_extendedprice
+    join_condition: 'probe_table.l_partkey = build_table.l_partkey AND probe_table.l_quantity
+      < build_table.avg_qty
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step5-join-filter-quantity--combine
+  func: aggregate
+  from_previous_task: step5-join-filter-quantity
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-agg
+  func: aggregate
+  from_previous_task: step5-join-filter-quantity--combine
+  params:
+    select: 'SELECT SUM(l_extendedprice) / 7.0 AS avg_yearly
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step7-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

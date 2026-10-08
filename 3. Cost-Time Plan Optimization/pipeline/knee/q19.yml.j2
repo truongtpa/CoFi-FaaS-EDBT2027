@@ -1,0 +1,90 @@
+name: q19
+description: TPC-H Query 19
+variables:
+  enable_bf: 1
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+  parm2: $parm2
+  parm3: $parm3
+  parm4: $parm4
+  parm5: $parm5
+  parm6: $parm6
+steps:
+- name: step1-part
+  func: scan
+  input: s3://$bucket/part.parquet
+  params:
+    select: 'SELECT p_partkey, p_brand, p_size, p_container
+
+      '
+    sql_clauses: "WHERE p_size >= 1\n  AND p_partkey IS NOT NULL\n  AND (\n    (p_brand\
+      \ = '$parm1' \n     AND p_container IN ('SM CASE', 'SM BOX', 'SM PACK', 'SM\
+      \ PKG')\n     AND p_size <= 5)\n    OR\n    (p_brand = '$parm2'\n     AND p_container\
+      \ IN ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')\n     AND p_size <= 10)\n\
+      \    OR\n    (p_brand = '$parm3'\n     AND p_container IN ('LG CASE', 'LG BOX',\
+      \ 'LG PACK', 'LG PKG')\n     AND p_size <= 15)\n  )\n"
+    output_file: $base_path/$task_name/$random.parquet
+- name: step1-part--combine-make-bf
+  func: aggregate
+  from_previous_task: step1-part
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 1000
+- name: step2-lineitem
+  func: scan
+  input: s3://$bucket/lineitem.parquet
+  params:
+    select: 'SELECT l_partkey, l_quantity, l_extendedprice, l_discount
+
+      '
+    sql_clauses: "WHERE l_shipinstruct = 'DELIVER IN PERSON'\n  AND l_shipmode IN\
+      \ ('AIR', 'AIR REG')\n  AND l_partkey IS NOT NULL\n  AND l_quantity >= 10 AND\
+      \ l_quantity <= 40\n"
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 200
+- name: step2-lineitem--combine
+  func: aggregate
+  from_previous_task: step2-lineitem
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 25
+- name: step3-join
+  func: broadcast_join
+  from_previous_task:
+  - step1-part--combine-make-bf
+  - step2-lineitem--combine
+  params:
+    probe_select: SELECT l_extendedprice, l_discount
+    join_condition: "probe_table.l_partkey = build_table.p_partkey AND (\n  (build_table.p_brand\
+      \ = '$parm1' \n   AND build_table.p_container IN ('SM CASE', 'SM BOX', 'SM PACK',\
+      \ 'SM PKG') \n   AND probe_table.l_quantity >= $parm4\n   AND probe_table.l_quantity\
+      \ <= $parm4 + 10\n   AND build_table.p_size <= 5)\n  OR\n  (build_table.p_brand\
+      \ = '$parm2' \n   AND build_table.p_container IN ('MED BAG', 'MED BOX', 'MED\
+      \ PKG', 'MED PACK') \n   AND probe_table.l_quantity >= $parm5\n   AND probe_table.l_quantity\
+      \ <= $parm5 + 10 \n   AND build_table.p_size <= 10)\n  OR\n  (build_table.p_brand\
+      \ = '$parm3' \n   AND build_table.p_container IN ('LG CASE', 'LG BOX', 'LG PACK',\
+      \ 'LG PKG') \n   AND probe_table.l_quantity >= $parm6 \n   AND probe_table.l_quantity\
+      \ <= $parm6 + 10\n   AND build_table.p_size <= 15)\n)\n"
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step3-join--combine
+  func: aggregate
+  from_previous_task: step3-join
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-agg
+  func: aggregate
+  from_previous_task: step3-join--combine
+  params:
+    select: SELECT SUM(l_extendedprice * (1 - l_discount)) as revenue
+    output_file: $base_path/$task_name/$random.parquet
+- name: step7-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

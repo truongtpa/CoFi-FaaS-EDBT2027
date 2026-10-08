@@ -1,0 +1,112 @@
+name: q15
+description: TPC-H Query 15 - Top Supplier
+variables:
+  enable_bf: 1
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+steps:
+- name: step1-lineitem
+  func: scan
+  input: s3://$bucket/lineitem.parquet
+  from_previous_task: None
+  params:
+    select: SELECT l_suppkey, l_extendedprice, l_discount
+    sql_clauses: "WHERE l_shipdate >= DATE '$parm1'\n  AND l_shipdate < DATE '$parm1'\
+      \ + INTERVAL 3 MONTH\n  AND l_suppkey IS NOT NULL\n"
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 200
+- name: step1-lineitem--combine
+  func: aggregate
+  from_previous_task: step1-lineitem
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 200
+- name: step2-revenue-per-supplier
+  func: aggregate
+  from_previous_task: step1-lineitem--combine
+  params:
+    select: "SELECT l_suppkey AS supplier_no,\n       SUM(l_extendedprice * (1 - l_discount))\
+      \ AS total_revenue\n"
+    sql_clauses: GROUP BY l_suppkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step2-revenue-per-supplier--reduce
+  func: aggregate
+  from_previous_task: step2-revenue-per-supplier
+  params:
+    select: SELECT supplier_no, SUM(total_revenue) AS total_revenue
+    sql_clauses: GROUP BY supplier_no
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 25
+- name: step3-max-revenue
+  func: aggregate
+  from_previous_task: step2-revenue-per-supplier--reduce
+  params:
+    select: SELECT MAX(total_revenue) AS max_revenue
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step3-max-revenue--reduce
+  func: aggregate
+  from_previous_task: step3-max-revenue
+  params:
+    select: SELECT MAX(max_revenue) AS max_revenue
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-supplier
+  func: scan
+  input: s3://$bucket/supplier.parquet
+  params:
+    select: SELECT s_suppkey, s_name, s_address, s_phone
+    sql_clauses: WHERE s_suppkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+- name: step4-supplier--combine
+  func: aggregate
+  from_previous_task: step4-supplier
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 25
+- name: step5-join-supplier-revenue
+  func: broadcast_join
+  from_previous_task:
+  - step4-supplier--combine
+  - step2-revenue-per-supplier--reduce
+  params:
+    probe_select: SELECT s_suppkey, s_name, s_address, s_phone, total_revenue
+    join_condition: s_suppkey = supplier_no
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 25
+- name: step5-join-supplier-revenue--combine
+  func: aggregate
+  from_previous_task: step5-join-supplier-revenue
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-join-max
+  func: broadcast_join
+  from_previous_task:
+  - step3-max-revenue--reduce
+  - step5-join-supplier-revenue--combine
+  params:
+    probe_select: SELECT s_suppkey, s_name, s_address, s_phone, total_revenue
+    join_condition: probe_table.total_revenue = build_table.max_revenue
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-join-max--combine
+  func: aggregate
+  from_previous_task: step6-join-max
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step7-agg
+  func: aggregate
+  from_previous_task: step6-join-max--combine
+  params:
+    select: SELECT s_suppkey, s_name, s_address, s_phone, total_revenue
+    sql_clauses: ORDER BY s_suppkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step8-summary-clean
+  func: summary_clean
+  from_previous_task: step7-agg
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

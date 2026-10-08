@@ -1,0 +1,211 @@
+name: q2
+description: TPC-H Query 02 - Minimum Cost Supplier
+variables:
+  enable_bf: 1
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+  parm2: $parm2
+  parm3: $parm3
+steps:
+- name: step1-region
+  func: scan
+  input: s3://$bucket/region.parquet
+  from_previous_task: None
+  params:
+    select: SELECT r_regionkey
+    sql_clauses: WHERE r_name = '$parm3' AND r_regionkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+- name: step1-region--combine
+  func: aggregate
+  from_previous_task: step1-region
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step2-nation
+  func: scan
+  input: s3://$bucket/nation.parquet
+  params:
+    select: SELECT n_nationkey, n_name, n_regionkey
+    sql_clauses: WHERE n_nationkey IS NOT NULL AND n_regionkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+- name: step2-nation--combine
+  func: aggregate
+  from_previous_task: step2-nation
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join-region-nation
+  func: broadcast_join
+  from_previous_task:
+  - step1-region--combine
+  - step2-nation--combine
+  params:
+    probe_select: SELECT n_nationkey, n_name
+    join_condition: r_regionkey = n_regionkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join-region-nation--combine
+  func: aggregate
+  from_previous_task: step3-join-region-nation
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: n_nationkey
+    bf_path: /mnt/filters/$task_name/$random.bin
+    est_elements: 5
+- name: step3-join-region-nation--mergebf
+  func: merge_bf
+  from_previous_task: step3-join-region-nation--combine
+  params:
+    file_output: /mnt/filters/$task_name/$random.bin
+    error_rate: 0.001
+- name: step4-supplier
+  func: scan
+  input: s3://$bucket/supplier.parquet
+  from_previous_task: step3-join-region-nation--mergebf
+  params:
+    select: SELECT s_suppkey, s_name, s_address, s_nationkey, s_phone, s_acctbal,
+      s_comment
+    sql_clauses: WHERE s_suppkey IS NOT NULL AND s_nationkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: s_nationkey
+    filter_by_bf: true
+- name: step4-supplier--combine
+  func: aggregate
+  from_previous_task: step4-supplier
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 1000
+- name: step5-part
+  func: scan
+  input: s3://$bucket/part.parquet
+  from_previous_task: None
+  params:
+    select: SELECT p_partkey, p_mfgr, p_size, p_type
+    sql_clauses: "WHERE p_size = $parm1\n  AND p_type LIKE '%$parm2'\n  AND p_partkey\
+      \ IS NOT NULL\n"
+    output_file: $base_path/$task_name/$random.parquet
+- name: step5-part--combine
+  func: aggregate
+  from_previous_task: step5-part
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: p_partkey
+    bf_path: /mnt/filters/$task_name/$random.bin
+    est_elements: 200000
+- name: step5-part--mergebf
+  func: merge_bf
+  from_previous_task: step5-part--combine
+  params:
+    file_output: /mnt/filters/$task_name/$random.bin
+    error_rate: 0.001
+- name: step6-partsupp
+  func: scan
+  input: s3://$bucket/partsupp.parquet
+  from_previous_task: step5-part--mergebf
+  params:
+    select: SELECT ps_partkey, ps_suppkey, ps_supplycost
+    sql_clauses: WHERE ps_partkey IS NOT NULL AND ps_suppkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: ps_partkey
+    filter_by_bf: true
+- name: step6-partsupp--combine
+  func: aggregate
+  from_previous_task: step6-partsupp
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step7-join-part-partsupp
+  func: broadcast_join
+  from_previous_task:
+  - step5-part--combine
+  - step6-partsupp--combine
+  params:
+    probe_select: SELECT ps_suppkey, ps_supplycost, p_partkey, p_mfgr
+    join_condition: p_partkey = ps_partkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step7-join-part-partsupp--combine
+  func: aggregate
+  from_previous_task: step7-join-part-partsupp
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step8-join-supplier
+  func: broadcast_join
+  from_previous_task:
+  - step4-supplier--combine
+  - step7-join-part-partsupp--combine
+  params:
+    probe_select: "SELECT s_name, s_address, s_phone, s_acctbal, s_comment,\n    \
+      \   s_nationkey, ps_supplycost, p_partkey, p_mfgr\n"
+    join_condition: s_suppkey = ps_suppkey
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step8-join-supplier--combine
+  func: aggregate
+  from_previous_task: step8-join-supplier
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step9-join-nation
+  func: broadcast_join
+  from_previous_task:
+  - step3-join-region-nation--combine
+  - step8-join-supplier--combine
+  params:
+    probe_select: "SELECT s_name, s_address, s_phone, s_acctbal, s_comment,\n    \
+      \   n_name, ps_supplycost, p_partkey, p_mfgr\n"
+    join_condition: n_nationkey = s_nationkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step9-join-nation--combine
+  func: aggregate
+  from_previous_task: step9-join-nation
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step10-min-supplycost
+  func: aggregate
+  from_previous_task: step9-join-nation--combine
+  params:
+    select: 'SELECT p_partkey AS min_partkey, MIN(ps_supplycost) AS min_supplycost
+
+      '
+    sql_clauses: GROUP BY p_partkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step10-min-supplycost--reduce
+  func: aggregate
+  from_previous_task: step10-min-supplycost
+  params:
+    select: SELECT min_partkey, MIN(min_supplycost) AS min_supplycost
+    sql_clauses: GROUP BY min_partkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step11-join-min
+  func: broadcast_join
+  from_previous_task:
+  - step10-min-supplycost--reduce
+  - step9-join-nation--combine
+  params:
+    probe_select: "SELECT s_name, s_address, s_phone, s_acctbal, s_comment,\n    \
+      \   n_name, ps_supplycost, p_partkey, p_mfgr\n"
+    join_condition: 'probe_table.p_partkey = build_table.min_partkey AND probe_table.ps_supplycost
+      = build_table.min_supplycost
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step11-join-min--combine
+  func: aggregate
+  from_previous_task: step11-join-min
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step12-agg
+  func: aggregate
+  from_previous_task: step11-join-min--combine
+  params:
+    select: "SELECT s_acctbal, s_name, n_name, p_partkey, p_mfgr,\n       s_address,\
+      \ s_phone, s_comment\n"
+    sql_clauses: 'ORDER BY s_acctbal DESC, n_name, s_name, p_partkey
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: step13-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

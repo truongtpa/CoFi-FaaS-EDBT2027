@@ -1,0 +1,17 @@
+{
+ "mp_star": 20,
+ "size_star": 70,
+ "scenarios": [
+  "default",
+  "scan_mp20",
+  "all_mp20",
+  "scan_opt"
+ ],
+ "grid": "notebooks/cost-report/tpch100-v5/s3grid/s3-grid.csv",
+ "scenarios_meaning": {
+  "default": "every stage max_parallel 70, 50 MB",
+  "scan_mp20": "scan stages max_parallel 20",
+  "scan_opt": "scan stages max_parallel 20 and 70 MB",
+  "all_mp20": "every stage max_parallel 20"
+ }
+}

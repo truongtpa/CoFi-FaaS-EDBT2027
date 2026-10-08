@@ -1,0 +1,185 @@
+name: q21
+description: TPC-H Query 21 - Suppliers Who Kept Orders Waiting
+variables:
+  enable_bf: 1
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+steps:
+- name: step1-nation
+  func: scan
+  input: s3://$bucket/nation.parquet
+  from_previous_task: None
+  params:
+    select: SELECT n_nationkey
+    sql_clauses: WHERE n_name = '$parm1' AND n_nationkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+- name: step1-nation--combine
+  func: aggregate
+  from_previous_task: step1-nation
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: n_nationkey
+    bf_path: /mnt/filters/$task_name/$random.bin
+    est_elements: 1
+- name: step1-nation--mergebf
+  func: merge_bf
+  from_previous_task: step1-nation--combine
+  params:
+    file_output: /mnt/filters/$task_name/$random.bin
+    error_rate: 0.001
+- name: step2-supplier
+  func: scan
+  input: s3://$bucket/supplier.parquet
+  from_previous_task: step1-nation--mergebf
+  params:
+    select: SELECT s_suppkey, s_name, s_nationkey
+    sql_clauses: WHERE s_suppkey IS NOT NULL AND s_nationkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: s_nationkey
+    filter_by_bf: true
+- name: step2-supplier--combine
+  func: aggregate
+  from_previous_task: step2-supplier
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join-nation-supplier
+  func: broadcast_join
+  from_previous_task:
+  - step1-nation--combine
+  - step2-supplier--combine
+  params:
+    probe_select: SELECT s_suppkey, s_name
+    join_condition: n_nationkey = s_nationkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step3-join-nation-supplier--combine
+  func: aggregate
+  from_previous_task: step3-join-nation-supplier
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 1000
+- name: step4-orders
+  func: scan
+  input: s3://$bucket/orders.parquet
+  from_previous_task: None
+  params:
+    select: SELECT o_orderkey
+    sql_clauses: WHERE o_orderstatus = 'F' AND o_orderkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step4-orders--combine
+  func: aggregate
+  from_previous_task: step4-orders
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step5-lineitem-l1
+  func: scan
+  input: s3://$bucket/lineitem.parquet
+  params:
+    select: SELECT l_orderkey, l_suppkey
+    sql_clauses: "WHERE l_receiptdate > l_commitdate\n  AND l_orderkey IS NOT NULL\n\
+      \  AND l_suppkey IS NOT NULL\n"
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 100
+- name: step5-lineitem-l1--combine
+  func: aggregate
+  from_previous_task: step5-lineitem-l1
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-join-orders-l1
+  func: broadcast_join
+  from_previous_task:
+  - step4-orders--combine
+  - step5-lineitem-l1--combine
+  params:
+    join_type: left_semi
+    probe_select: SELECT l_orderkey, l_suppkey
+    join_condition: l_orderkey = o_orderkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step6-join-orders-l1--combine
+  func: aggregate
+  from_previous_task: step6-join-orders-l1
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 25
+- name: step7-join-supplier-l1
+  func: broadcast_join
+  from_previous_task:
+  - step3-join-nation-supplier--combine
+  - step6-join-orders-l1--combine
+  params:
+    probe_select: SELECT l_orderkey, s_suppkey, s_name
+    join_condition: s_suppkey = l_suppkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step7-join-supplier-l1--combine
+  func: aggregate
+  from_previous_task: step7-join-supplier-l1
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step8-late-per-order
+  func: aggregate
+  from_previous_task: step7-join-supplier-l1--combine
+  params:
+    select: "SELECT l_orderkey,\n       COUNT(DISTINCT s_suppkey) AS late_supplier_cnt,\n\
+      \       MAX(s_name) AS s_name\n"
+    sql_clauses: GROUP BY l_orderkey
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step9-lineitem-l2
+  func: scan
+  input: s3://$bucket/lineitem.parquet
+  params:
+    select: SELECT l_orderkey, l_suppkey
+    sql_clauses: WHERE l_orderkey IS NOT NULL AND l_suppkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 100
+- name: step9-lineitem-l2--combine
+  func: aggregate
+  from_previous_task: step9-lineitem-l2
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+- name: step10-all-suppliers-per-order
+  func: aggregate
+  from_previous_task: step9-lineitem-l2--combine
+  params:
+    select: "SELECT l_orderkey,\n       COUNT(DISTINCT l_suppkey) AS supplier_cnt\n"
+    sql_clauses: GROUP BY l_orderkey
+    output_file: $base_path/$task_name/$random.parquet
+- name: step11-filter-orders
+  func: broadcast_join
+  from_previous_task:
+  - step8-late-per-order
+  - step10-all-suppliers-per-order
+  params:
+    probe_select: SELECT build_table.s_name
+    join_condition: 'probe_table.l_orderkey = build_table.l_orderkey AND build_table.late_supplier_cnt
+      = 1 AND probe_table.supplier_cnt > 1
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 25
+- name: step11-filter-orders--combine
+  func: aggregate
+  from_previous_task: step11-filter-orders
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step12-agg
+  func: aggregate
+  from_previous_task: step11-filter-orders--combine
+  params:
+    select: SELECT s_name, COUNT(*) AS numwait
+    sql_clauses: GROUP BY s_name ORDER BY numwait DESC, s_name
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: step13-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true

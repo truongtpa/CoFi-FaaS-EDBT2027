@@ -1,0 +1,144 @@
+name: q3
+description: TPC-H Query 03
+variables:
+  enable_bf: 1
+  enable_nfs_shuffle: $enable_nfs_shuffle
+  bucket: $bucket
+  base_path: $base_path
+  s3_metadata: $s3_metadata/$bucket.json
+  nfs_folder: /mnt/filters
+  parm1: $parm1
+  parm2: $parm2
+steps:
+- name: Step1-customer
+  func: scan
+  input: s3://$bucket/customer.parquet
+  from_previous_task: None
+  params:
+    select: SELECT c_custkey
+    sql_clauses: WHERE c_mktsegment = '$parm1' AND c_custkey IS NOT NULL
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 1000
+- name: Step1-customer--combine
+  func: aggregate
+  from_previous_task: Step1-customer
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: c_custkey
+    bf_path: /mnt/filters/$task_name/$random.bin
+    est_elements: 3333564
+  max_size_mb: 10
+- name: Step1-customer--mergebf
+  func: merge_bf
+  from_previous_task: Step1-customer--combine
+  params:
+    file_output: /mnt/filters/$task_name/$random.bin
+    error_rate: 0.001
+- name: Step2-orders
+  func: scan
+  input: s3://$bucket/orders.parquet
+  from_previous_task: Step1-customer--mergebf
+  params:
+    select: 'SELECT o_orderkey, o_custkey, o_orderdate, o_shippriority
+
+      '
+    sql_clauses: 'WHERE o_orderdate < DATE ''$parm2'' AND o_custkey IS NOT NULL AND
+      o_orderkey IS NOT NULL
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: o_custkey
+    filter_by_bf: true
+- name: Step2-orders--combine
+  func: aggregate
+  from_previous_task: Step2-orders
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: Step3-join-customer-orders
+  func: broadcast_join
+  from_previous_task:
+  - Step1-customer--combine
+  - Step2-orders--combine
+  params:
+    probe_select: 'SELECT o_orderkey, o_orderdate, o_shippriority
+
+      '
+    join_condition: 'c_custkey = o_custkey
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 25
+- name: Step3-join-customer-orders--combine
+  func: aggregate
+  from_previous_task: Step3-join-customer-orders
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: o_orderkey
+    bf_path: /mnt/filters/$task_name/$random.bin
+    est_elements: 10389
+  max_size_mb: 10
+- name: Step3-join-customer-orders--mergebf
+  func: merge_bf
+  from_previous_task: Step3-join-customer-orders--combine
+  params:
+    file_output: /mnt/filters/$task_name/$random.bin
+    error_rate: 0.001
+- name: Step4-lineitem
+  func: scan
+  input: s3://$bucket/lineitem.parquet
+  from_previous_task: Step3-join-customer-orders--mergebf
+  params:
+    select: 'SELECT l_orderkey, l_extendedprice, l_discount
+
+      '
+    sql_clauses: 'WHERE l_shipdate > DATE ''$parm2'' AND l_orderkey IS NOT NULL
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+    bf_column: l_orderkey
+    filter_by_bf: true
+  max_size_mb: 25
+- name: Step4-lineitem--combine
+  func: aggregate
+  from_previous_task: Step4-lineitem
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: Step5-join
+  func: broadcast_join
+  from_previous_task:
+  - Step3-join-customer-orders--combine
+  - Step4-lineitem--combine
+  params:
+    probe_select: 'SELECT l_orderkey, l_extendedprice, l_discount, o_orderdate, o_shippriority
+
+      '
+    join_condition: 'l_orderkey = o_orderkey
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+- name: Step5-join--combine
+  func: aggregate
+  from_previous_task: Step5-join
+  params:
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: Step6-agg
+  func: aggregate
+  from_previous_task: Step5-join--combine
+  params:
+    select: "SELECT l_orderkey,\n    SUM(l_extendedprice * (1 - l_discount)) AS revenue,\n\
+      \    o_orderdate,\n    o_shippriority\n"
+    sql_clauses: 'GROUP BY l_orderkey, o_orderdate, o_shippriority ORDER BY revenue
+      DESC, o_orderdate
+
+      '
+    output_file: $base_path/$task_name/$random.parquet
+  max_size_mb: 10
+- name: Step7-summary-clean
+  func: summary_clean
+  params:
+    output_s3: $base_path
+    nfs_folder: /mnt/filters
+    is_delete: true
