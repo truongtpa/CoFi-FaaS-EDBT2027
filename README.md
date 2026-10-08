@@ -1,4 +1,4 @@
-# CoFi-FaaS
+# CoFi-FaaS: A Cost Model for Bloom Filter Pushdown in Serverless Joins
 
 Data, notebooks and figures of the paper (EDBT 2027): a cost-time model for serverless query plans with
 Bloom-filter pushdown. TPC-H SF100 on Grid'5000.
