@@ -50,7 +50,7 @@ Each section has a notebook, `data/` (input data) and `figures/` (output figures
 Systems compared: **Starling-based** (no BF), **BLOOM-FaaS S3 / NFS** (every BF on), and **CoFi-FaaS** plans
 (knee, min-time, min-money) chosen by the optimizer.
 
-### 1. Parameter estimation and calibration — [`tuning-parameters.ipynb`](1.%20Parameter%20Estimation%20and%20Calibration/tuning-parameters.ipynb)
+### 1. Parameter estimation and calibration
 
 | Storage | Single function | Peak aggregate | Fit error (Aggregate/per function) |
 |---|---|---|------------------------------------|
