@@ -32,7 +32,9 @@ describes the base system used to run every experiment of this repository (archi
 construction with self-calibration, two-tier storage, and its comparison with Starling and Spark).
 
 > Phan-An-Truong Tran, Laurent d'Orazio, Le Gruenwald, Thuong-Cang Phan. *BLOOM-FaaS: Early Filtering For
-> Serverless Joins Using Distributed Bloom Filters.BigdataIEEE, 2026. [hal-05722983](https://hal.science/hal-05722983v1)
+> Serverless Joins Using Distributed Bloom Filters.* Accepted at the
+> [2026 IEEE International Conference on Big Data (IEEE BigData 2026)](https://bigdataieee.org/BigData2026/).
+> Preprint: [hal-05722983](https://hal.science/hal-05722983v1)
 
 ## Repository layout
 
